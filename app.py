@@ -2459,64 +2459,66 @@ class FinalStudentResult(db.Model):
 from datetime import datetime
 @app.route('/final_report/<zk_id>', methods=['GET'])
 def final_report(zk_id):
+    # 1. تعريف السنة المطلوبة بشكل صحيح
     requested_year = request.args.get('year', type=int)
     if not requested_year:
-      academic_year_to_query = datetime.now().year
+        academic_year_to_query = datetime.now().year
     else:
-     academic_year_to_query = requested_year
+        academic_year_to_query = requested_year
     
     student = Student.query.filter_by(zk_user_id=zk_id).first()
     if not student:
         return jsonify({'message': 'Student not found'}), 404
 
-    # 1. الاستعلام عن الدرجات
-    grades = FinalSubjectGrade.query.filter(
-        FinalSubjectGrade.student_zk_id == zk_id,
-        FinalSubjectGrade.academic_year == current_year
-    ).all()
-
-    if not grades:
-        return jsonify({'message': f'No final report found for student {zk_id} in {current_year}'}), 404
-
-    # 2. تحديد النتيجة العامة والترتيب (نقوم بجلبها من أول سجل)
-    general_result_db = grades[0].general_result if grades else 'غير محدد'
-    overall_ranking_db = grades[0].overall_ranking if grades else 'غير محدد' # 🔑 جلب الترتيب من قاعدة البيانات
-    
-    # جلب اسم الصف ومنطق بناء قائمة الدرجات... 
-    class_name = 'غير محدد'
+    # 2. الاستعلام عن الدرجات (تم تغيير current_year إلى academic_year_to_query)
     try:
-        if 'Class' in globals() and hasattr(student, 'class_id') and student.class_id:
+        grades = FinalSubjectGrade.query.filter(
+            FinalSubjectGrade.student_zk_id == zk_id,
+            FinalSubjectGrade.academic_year == academic_year_to_query
+        ).all()
+
+        if not grades:
+            return jsonify({'message': f'No final report found for student {zk_id} in {academic_year_to_query}'}), 404
+
+        # 3. تحديد النتيجة العامة والترتيب
+        general_result_db = grades[0].general_result if grades else 'غير محدد'
+        overall_ranking_db = grades[0].overall_ranking if grades else 'غير محدد'
+        
+        class_name = 'غير محدد'
+        if hasattr(student, 'class_id') and student.class_id:
+            # تأكدي أن Class معرف في الـ models لديكِ
             student_class = Class.query.get(student.class_id)
             if student_class:
                 class_name = student_class.name
-    except Exception:
-        pass
+            
+        overall_total = sum((grade.subject_total or 0.0) for grade in grades)
         
-    overall_total = sum(grade.subject_total for grade in grades)
-    
-    final_grades_list = []
-    for grade in grades:
-        final_grades_list.append({
-            'subject_name': grade.subject_name,
-            'first_term_total': grade.first_acc_grade or 0.0, 
-            'first_term_result_grade': grade.first_acc_result or 0.0, 
-            'second_term_total': grade.second_acc_grade or 0.0, 
-            'second_term_result_grade': grade.second_acc_result or 0.0, 
-            'total_aggregate': grade.subject_total or 0.0,
-        })
-    
-    # 3. بناء ملخص التقرير (FinalReportSummary)
-    report_data = {
-        'student_name': student.name,
-        'class_name': class_name,
-        'academic_year': current_year,
-        'overall_total': overall_total or 0.0, 
-        'overall_ranking': overall_ranking_db, # 🔑 إرسال الترتيب المدخل يدوياً
-        'general_result': general_result_db, 
-        'final_grades': final_grades_list,
-    }
+        final_grades_list = []
+        for grade in grades:
+            final_grades_list.append({
+                'subject_name': grade.subject_name,
+                'first_term_total': grade.first_acc_grade or 0.0, 
+                'first_term_result_grade': grade.first_acc_result or 0.0, 
+                'second_term_total': grade.second_acc_grade or 0.0, 
+                'second_term_result_grade': grade.second_acc_result or 0.0, 
+                'total_aggregate': grade.subject_total or 0.0,
+            })
+        
+        report_data = {
+            'student_name': student.name,
+            'class_name': class_name,
+            'academic_year': academic_year_to_query, # تم تصحيح الاسم هنا أيضاً
+            'overall_total': overall_total, 
+            'overall_ranking': overall_ranking_db,
+            'general_result': general_result_db, 
+            'final_grades': final_grades_list,
+        }
 
-    return jsonify(report_data), 200
+        return jsonify(report_data), 200
+
+    except Exception as e:
+        print(f"Error in Final Report: {e}")
+        return jsonify({"error": str(e)}), 500
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++=
 
 # ------------------------------------------
