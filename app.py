@@ -164,14 +164,18 @@ def login_api():
     username = data.get('username')
     password = data.get('password')
 
+    # طباعة لمحرك البحث في Render لمراقبة المحاولة
+    print(f"Login attempt for user: {username}") 
+
     if not username or not password:
         return jsonify({"message": "❌ الرجاء إدخال اسم المستخدم وكلمة المرور."}), 400
 
+    # البحث عن المستخدم في قاعدة البيانات
     user = User.query.filter_by(username=username).first()
 
-    # 2. التحقق من وجود المستخدم وصحة كلمة المرور المشفرة
-    if user and check_password_hash(user.password, password):
-        # 3. تسجيل الدخول باستخدام Flask-Login
+    # 2. التحقق من وجود المستخدم ومطابقة كلمة المرور (نص عادي)
+    if user and user.password == password:
+        # 3. تسجيل الدخول
         login_user(user)
 
         # 4. تجميع بيانات الأبناء وإعادتها كـ JSON
@@ -179,14 +183,14 @@ def login_api():
         for student in user.students:
             students_data.append({
                 'student_id': student.id,
-                'zk_id': student.zk_user_id, # يجب أن يتطابق مع 'zkId' في نموذج Dart
+                'zk_id': student.zk_user_id, 
                 'name': student.name,
             })
 
         # 5. النجاح: إرسال قائمة الأبناء
         return jsonify(students_data), 200
     else:
-        # الفشل: اسم مستخدم أو كلمة مرور غير صحيحة
+        # الفشل: البيانات غير متطابقة
         return jsonify({"message": "❌ اسم المستخدم أو كلمة المرور غير صحيحة."}), 401
 
 
