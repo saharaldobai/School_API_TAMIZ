@@ -158,7 +158,7 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
 
 
 @app.route('/login', methods=['POST'])
-def login():
+def login_api():
     # 1. قراءة بيانات JSON من التطبيق
     data = request.get_json()
     username = data.get('username')
