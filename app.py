@@ -186,6 +186,7 @@ def grades_report(zk_id):
     
     # تعيين قيم افتراضية لـ final_total_aggregate
     final_total_aggregate = 0
+    final_total=0
     
     # تعيين قيم افتراضية لـ ranking_db و result_db
     ranking_db = 'غير محدد'
