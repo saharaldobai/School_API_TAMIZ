@@ -2444,6 +2444,44 @@ def login():
     next_page = request.args.get('next')
     return redirect(next_page or url_for('admin_dashboard'))
 
+
+
+@app.route('/login', methods=['POST'])
+def login():
+    # 1. قراءة بيانات JSON من التطبيق
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+
+    if not username or not password:
+        return jsonify({"message": "❌ الرجاء إدخال اسم المستخدم وكلمة المرور."}), 400
+
+    # البحث عن المستخدم
+    user = User.query.filter_by(username=username).first()
+
+    # 2. التحقق المباشر (نص عادي)
+    if user and user.password == password:
+        
+        # 3. 🛑 السطر الناقص والأهم: تفعيل الجلسة للمستخدم
+        login_user(user)
+
+        # 4. تجميع بيانات الأبناء لإرسالها للتطبيق
+        students_data = []
+        for student in user.students:
+            students_data.append({
+                'student_id': student.id,
+                'zk_id': student.zk_user_id,
+                'name': student.name,
+                'class_name': student.current_class.name if student.current_class else 'غير محدد'
+            })
+
+        # 5. النجاح: إرسال قائمة الأبناء مع رسالة نجاح (اختياري)
+        # يمكنك إرسال البيانات مباشرة كما فعلت أنت
+        return jsonify(students_data), 200
+    
+    else:
+        # الفشل
+        return jsonify({"message": "❌ اسم المستخدم أو كلمة المرور غير صحيحة."}), 401
 # مسار تسجيل الخروج (يبقى كما هو)
 @app.route('/logout')
 @login_required
