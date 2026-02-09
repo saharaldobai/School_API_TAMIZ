@@ -1,0 +1,20 @@
+{% extends 'admin/model/edit.html' %}
+
+{% block head_tail %}
+    {{ super() }}
+    <style>
+        /* إخفاء الشريط العلوي والجانبي وتوسيع المحتوى - نسخة خاصة بالنماذج */
+        .navbar.navbar-inverse.navbar-fixed-top, 
+        .col-sm-2.col-md-2 {
+            display: none !important;
+        }
+        .col-sm-10.col-md-10 {
+            width: 100% !important;
+            float: none !important;
+            margin: 0 !important;
+            padding-top: 20px;
+        }
+        body { padding-top: 0 !important; }
+        .page-header small { display: none !important; }
+    </style>
+{% endblock %}

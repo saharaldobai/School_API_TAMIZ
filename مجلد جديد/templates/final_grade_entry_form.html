@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>إدخال الدرجات النهائية</title>
+    
+    {# روابط Bootstrap و Font Awesome #}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    
+    <style>
+        body { background-color: #f8f9fa; }
+        .container { margin-top: 50px; margin-bottom: 50px; max-width: 900px; }
+        .card-header { background-color: #dc3545; color: white; font-weight: bold; } /* أحمر للنهائية */
+        .grade-input { max-width: 100px; text-align: center; }
+        .grade-group { border: 1px solid #ccc; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    
+    <div class="container">
+        <div class="card shadow-lg">
+            
+            <div class="card-header text-center">
+                <h4 class="mb-0"><i class="fas fa-trophy me-2"></i> إدخال الدرجات النهائية</h4>
+            </div>
+            
+            <div class="card-body">
+                
+                {# رسالة الحالة #}
+                <div id="statusMessage" class="alert alert-info text-center" role="alert" style="display: none;">
+                    الرجاء اختيار الطالب والمادة لإدخال الدرجات.
+                </div>
+                
+                <form id="finalGradeForm">
+                    <div class="row mb-3">
+                        {# اختيار الطالب #}
+                        <div class="col-md-4">
+                            <label for="student_name" class="form-label">اسم الطالب:</label>
+                            <input type="text" id="student_name" class="form-control" list="students_list" placeholder="ابدأ بكتابة اسم الطالب..." required>
+                            <datalist id="students_list">
+                                {% for name, zkid in students %}
+                                <option value="{{ name }}" data-zkid="{{ zkid }}">{{ zkid }}</option>
+                                {% endfor %}
+                            </datalist>
+                            {# حقل مخفي لحفظ الـ ZK ID #}
+                            <input type="hidden" id="student_zk_id" name="student_zk_id" required>
+                        </div>
+
+                        {# اختيار العام الأكاديمي #}
+                        <div class="col-md-4">
+                            <label for="academic_year" class="form-label">العام الأكاديمي:</label>
+                            <select id="academic_year" name="academic_year" class="form-select" required>
+                                <option value="">اختر عام</option>
+                                {% for year in academic_years %}
+                                <option value="{{ year }}">{{ year }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        {# اختيار المادة #}
+                        <div class="col-md-4">
+                            <label for="subject_name" class="form-label">اسم المادة:</label>
+                            <select id="subject_name" name="subject_name" class="form-select" required>
+                                <option value="">اختر مادة</option>
+                                {% for subject in subjects %}
+                                <option value="{{ subject.name }}">{{ subject.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <hr>
+
+                    <div class="row">
+                        {# المحصلة الأولى #}
+                        <div class="col-md-6 grade-group">
+                            <h5 class="text-secondary">المحصلة الأولى (الفترة 1)</h5>
+                            <div class="mb-3">
+                                <label for="first_acc_grade" class="form-label">قيمة المحصلة الأولى:</label>
+                                <input type="number" step="0.01" min="0" id="first_acc_grade" name="first_acc_grade" class="form-control grade-input" value="0" required>
+                            </div>
+                            <div class="mb-0">
+                              <label for="first_acc_result" class="form-label">نتيجة المحصلة الأولى:</label>
+                                <input type="number" step="0.01" min="0" id="first_acc_result" name="first_acc_result" class="form-control grade-input" value="0" required>
+                            </div>
+                            
+                        </div>
+
+                        {# المحصلة الثانية #}
+                        <div class="col-md-6 grade-group">
+                            <h5 class="text-secondary">المحصلة الثانية (الفترة 2)</h5>
+                            <div class="mb-3">
+                                <label for="second_acc_grade" class="form-label">قيمة المحصلة الثانية:</label>
+                                <input type="number" step="0.01" min="0" id="second_acc_grade" name="second_acc_grade" class="form-control grade-input" value="0" required>
+                            </div>
+                            <div class="mb-0">
+                                <label for="second_acc_result" class="form-label">نتيجة المحصلة الثانية:</label>
+                                <input type="number" step="0.01" min="0" id="second_acc_result" name="second_acc_result" class="form-control grade-input" value="0" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+
+                    {# عرض المجموع للمادة #}
+                    <div class="text-center p-3 border rounded bg-light mb-4">
+                        <h4 class="mb-0">
+                            المجموع للمادة: <span id="subjectTotalDisplay" class="text-primary fw-bold">0</span>
+                        </h4>
+                    </div>
+
+                    {# زر الإرسال #}
+                    <div class="text-center">
+                        <button type="submit" id="submitButton" class="btn btn-danger btn-lg">
+                            <i class="fas fa-upload me-2"></i> حفظ وتحديث الدرجات النهائية
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script>
+        $(document).ready(function() {
+
+            // ------------------------------------------
+            // 1. وظيفة ربط اسم الطالب بالـ ZK ID المخفي
+            // ------------------------------------------
+            $('#student_name').on('input', function() {
+                const selectedName = $(this).val();
+                const option = $('#students_list option').filter(function() {
+                    return $(this).val() === selectedName;
+                });
+                
+                if (option.length) {
+                    $('#student_zk_id').val(option.data('zkid'));
+                } else {
+                    $('#student_zk_id').val('');
+                }
+                
+                // تنظيف الرسالة وعرض الدرجات السابقة عند تغيير الطالب
+                $('#statusMessage').hide();
+                loadExistingGrades();
+            });
+
+            // ------------------------------------------
+            // 2. وظيفة حساب المجموع الكلي للمادة (تم التعديل)
+            // ------------------------------------------
+            function calculateTotal() {
+                // جلب القيم الأربعة وضمان تحويلها إلى أرقام
+                const first_acc_grade = parseFloat($('#first_acc_grade').val() || 0);
+                const second_acc_grade = parseFloat($('#second_acc_grade').val() || 0);
+                const first_acc_result = parseFloat($('#first_acc_result').val() || 0);
+                const second_acc_result = parseFloat($('#second_acc_result').val() || 0);
+                
+                // 🔑 التعديل: المجموع هو جمع القيم الأربعة
+                const total = first_acc_grade + second_acc_grade + first_acc_result + second_acc_result;
+                
+                // عرض المجموع الجديد
+                $('#subjectTotalDisplay').text(total.toFixed(2));
+            }
+            
+            // 🔑 التعديل: حساب المجموع عند تغيير أي من حقول الدرجات الأربعة
+            $('#first_acc_grade, #second_acc_grade, #first_acc_result, #second_acc_result').on('input', calculateTotal);
+            calculateTotal(); // حساب المجموع عند تحميل الصفحة
+
+            // ------------------------------------------
+            // 3. وظيفة جلب الدرجات السابقة (للتعديل)
+            // ------------------------------------------
+            function loadExistingGrades() {
+                const zk_id = $('#student_zk_id').val();
+                const year = $('#academic_year').val();
+                const subject = $('#subject_name').val();
+                
+                if (!zk_id || !year || !subject) {
+                    $('#first_acc_grade').val(0);
+                    $('#second_acc_grade').val(0);
+                    $('#first_acc_result').val(0); 
+                    $('#second_acc_result').val(0);
+                    calculateTotal();
+                    return;
+                }
+                
+                // جلب الدرجات الحالية من قاعدة البيانات عبر مسار GET (تحتاج لإضافته في app.py لاحقاً)
+                $.ajax({
+                    url: `/api/grades/final/load?zk_id=${zk_id}&year=${year}&subject=${subject}`,
+                    method: 'GET',
+                    success: function(response) {
+                        if (response.grades) {
+                            $('#first_acc_grade').val(response.grades.first_acc_grade || 0);
+                            $('#first_acc_result').val(response.grades.first_acc_result || 0); 
+                            $('#second_acc_grade').val(response.grades.second_acc_grade || 0);
+                            $('#second_acc_result').val(response.grades.second_acc_result || 0);
+                            $('#statusMessage')
+                                .removeClass('alert-danger')
+                                .addClass('alert-info')
+                                .html(`**<i class="fas fa-info-circle me-2"></i> تم تحميل درجات المادة بنجاح. أصبحت جاهزة للتعديل.**`)
+                                .fadeIn();
+                        } else {
+                             // في حالة عدم وجود درجات سابقة، يتم تصفير الحقول وتحديث المجموع
+                            $('#first_acc_grade').val(0);
+                            $('#second_acc_grade').val(0);
+                            $('#first_acc_result').val(0); 
+                            $('#second_acc_result').val(0);
+                            $('#statusMessage')
+                                .removeClass('alert-danger')
+                                .addClass('alert-info')
+                                .html(`**<i class="fas fa-info-circle me-2"></i> لم يتم العثور على درجات سابقة. قم بإدخالها.**`)
+                                .fadeIn();
+                        }
+                        calculateTotal(); // تحديث المجموع بعد التحميل أو التصفير
+                    },
+                    error: function(xhr, status, error) {
+                        $('#statusMessage')
+                            .removeClass('alert-info')
+                            .addClass('alert-danger')
+                            .html(`**<i class="fas fa-times-circle me-2"></i> فشل تحميل البيانات: ${xhr.responseJSON ? xhr.responseJSON.message : xhr.responseText}.**`)
+                            .fadeIn();
+                        calculateTotal();
+                    }
+                });
+            }
+            
+            // جلب الدرجات عند تغيير العام أو المادة
+            $('#academic_year, #subject_name').on('change', loadExistingGrades);
+            
+            // ------------------------------------------
+            // 4. إرسال النموذج وحفظ الدرجات (AJAX POST)
+            // ------------------------------------------
+            $('#finalGradeForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                const submitButton = $('#submitButton');
+                submitButton.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i> يتم الحفظ...');
+
+                const formData = {
+                    student_zk_id: $('#student_zk_id').val(),
+                    academic_year: $('#academic_year').val(),
+                    subject_name: $('#subject_name').val(),
+                    // 🔑 إرسال جميع الحقول كـ Float لضمان الدقة
+                    first_acc_grade: parseFloat($('#first_acc_grade').val() || 0),
+                    first_acc_result: parseFloat($('#first_acc_result').val() || 0),
+                    second_acc_grade: parseFloat($('#second_acc_grade').val() || 0),
+                    second_acc_result: parseFloat($('#second_acc_result').val() || 0),
+                };
+
+                // التحقق النهائي من الحقول
+                if (!formData.student_zk_id || !formData.academic_year || !formData.subject_name) {
+                    $('#statusMessage')
+                        .removeClass('alert-success')
+                        .addClass('alert-danger')
+                        .html(`**<i class="fas fa-times-circle me-2"></i> خطأ:** يرجى اختيار الطالب، العام، والمادة بشكل صحيح.`)
+                        .fadeIn();
+                    submitButton.prop('disabled', false).html('<i class="fas fa-upload me-2"></i> حفظ وتحديث الدرجات النهائية');
+                    return;
+                }
+
+                $.ajax({
+                    url: '{{ url_for("save_final_subject_grade") }}', // 🎯 مسار الحفظ
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(formData),
+                    success: function(response) {
+                        // 🔑 توقع مفتاح 'total' في الاستجابة (كما تم تعديله في كود Python المقترح)
+                        const total_grade_res = (response.total || response.subject_total).toFixed(2);
+                        $('#subjectTotalDisplay').text(total_grade_res);
+                        $('#statusMessage')
+                            .removeClass('alert-danger')
+                            .addClass('alert-success')
+                            .html(`**<i class="fas fa-check-circle me-2"></i> نجاح الإدخال:** ${response.message} (المجموع الجديد: **${total_grade_res}**).`)
+                            .fadeIn();
+                    },
+                    error: function(xhr, status, error) {
+                        const errorMsg = xhr.responseJSON ? xhr.responseJSON.message : xhr.responseText ? xhr.responseText : `حدث خطأ غير معروف: ${error}`;
+                        $('#statusMessage')
+                            .removeClass('alert-success')
+                            .addClass('alert-danger')
+                            .html(`**<i class="fas fa-times-circle me-2"></i> فشل الإدخال:** ${errorMsg}.`)
+                            .fadeIn();
+                    },
+                    complete: function() {
+                        submitButton.prop('disabled', false).html('<i class="fas fa-upload me-2"></i> حفظ وتحديث الدرجات النهائية');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

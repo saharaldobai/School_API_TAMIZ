@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>النتيجة النهائية للطالب</title>
+    
+    {# يمكنك تضمين Bootstrap أو أي مكتبة CSS تفضلها #}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Droid Arabic Naskh', Tahoma, Arial, sans-serif; }
+        .container { margin-top: 40px; margin-bottom: 50px; max-width: 900px; }
+        .card-header { background-color: #3f51b5; color: white; font-weight: bold; }
+        .total-summary { background-color: #e3f2fd; border-left: 5px solid #ff9800; padding: 20px; border-radius: 8px; margin-bottom: 25px; }
+        .result-pass { color: #1e8449; font-weight: bold; font-size: 1.2em; }
+        .result-fail { color: #c0392b; font-weight: bold; font-size: 1.2em; }
+        .table th { background-color: #f0f0f0; }
+    </style>
+</head>
+<body>
+    
+    <div class="container">
+        
+        <div class="card shadow-lg">
+            
+            <div class="card-header text-center">
+                <h4 class="mb-0"><i class="fas fa-certificate me-2"></i> النتيجة النهائية السنوية</h4>
+            </div>
+            
+            <div class="card-body">
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>اسم الطالب:</strong> {{ student_name }}</p>
+                        <p class="mb-1"><strong>الرقم التعريفي (ZK ID):</strong> {{ zk_id }}</p>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <p class="mb-1"><strong>العام الأكاديمي:</strong> {{ year }}</p>
+                        <button class="btn btn-sm btn-outline-secondary mt-2" onclick="window.print()"><i class="fas fa-print me-1"></i> طباعة التقرير</button>
+                    </div>
+                </div>
+
+                <hr>
+
+                {# ------------------------------------------ #}
+                {# ملخص النتيجة العامة #}
+                {# ------------------------------------------ #}
+                {% if final_grade %}
+                <div class="total-summary">
+                    <div class="row">
+                        <div class="col-md-4 text-center">
+                            <p class="mb-0 text-secondary">المجموع الكلي المعتمد</p>
+                            {# 🔑 ضمان أن overall_total هو رقم قبل التقريب #}
+                            <h3 class="text-primary">{{ final_grade.overall_total | default(0.00) | float | round(2) }}</h3>
+                        </div>
+                        <div class="col-md-4 text-center border-start border-end">
+                            <p class="mb-0 text-secondary">النتيجة العامة</p>
+                            {% if final_grade.general_result == 'ناجح' %}
+                                <h3 class="result-pass">{{ final_grade.general_result }} <i class="fas fa-check-circle"></i></h3>
+                            {% elif final_grade.general_result == 'راسب' %}
+                                <h3 class="result-fail">{{ final_grade.general_result }} <i class="fas fa-times-circle"></i></h3>
+                            {% else %}
+                                <h3>{{ final_grade.general_result | default('غير محدد') }}</h3>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <p class="mb-0 text-secondary">ترتيب الطالب</p>
+                            <h3 class="text-danger">{{ final_grade.ranking | default('---') }}</h3>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                    <div class="alert alert-warning text-center">
+                        <i class="fas fa-exclamation-triangle me-2"></i> لم يتم إدخال النتيجة النهائية العامة للطالب لهذا العام بعد.
+                    </div>
+                {% endif %}
+
+                {# ------------------------------------------ #}
+                {# جدول درجات المواد #}
+                {# ------------------------------------------ #}
+                <h5 class="mb-3 text-secondary"><i class="fas fa-list-alt me-2"></i> تفاصيل درجات المواد</h5>
+                
+                {% if subject_grades %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover text-center align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>المادة</th>
+                                <th>قيمة م 1</th>
+                                <th>نتيجة م 1</th>
+                                <th>قيمة م 2</th>
+                                <th>نتيجة م 2</th>
+                                <th>المجموع للمادة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for grade in subject_grades %}
+                            <tr>
+                                <td class="text-start">{{ grade.subject_name }}</td>
+                                
+                                {# 🔑 التعديل على درجات المحصلة الأولى #}
+                                <td>{{ grade.first_acc_grade | default(0.00) | float | round(2) }}</td>
+                                <td>{{ grade.first_acc_result | default(0.00) | float | round(2) }}</td>
+                                
+                                {# 🔑 التعديل على درجات المحصلة الثانية #}
+                                <td>{{ grade.second_acc_grade | default(0.00) | float | round(2) }}</td>
+                                <td>{{ grade.second_acc_result | default(0.00) | float | round(2) }}</td>
+                                
+                                {# 🔑 التعديل على المجموع (هذا السطر يحل مشكلة السطر 112) #}
+                                <td><strong>{{ grade.subject_total | default(0.00) | float | round(2) }}</strong></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-dark">
+                                <td colspan="5" class="text-start"><strong>المجموع الكلي لدرجات المواد</strong></td>
+                                
+                                {# 🔑 التعديل على المجموع الكلي المحسوب #}
+                                <td><strong>{{ calculated_total | default(0.00) | float | round(2) }}</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                {% else %}
+                    <div class="alert alert-info text-center">
+                        <i class="fas fa-info-circle me-2"></i> لم يتم إدخال درجات المواد النهائية للطالب لهذا العام.
+                    </div>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

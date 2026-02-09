@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدخال الدرجات الشهرية</title>
+    <!-- تضمين Tailwind CSS للتصميم المتجاوب -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* استخدام خط عربي مناسب للتصميم */
+        body {
+            font-family: 'Amiri', serif;
+            background-color: #f3f4f6;
+        }
+        /* لضمان أن حقل الإدخال الجديد يظهر بشكل جيد */
+        .datalist-input {
+            appearance: none; /* إزالة مظهر القائمة المنسدلة الافتراضي */
+            list-style: none;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+
+    <div class="max-w-4xl mx-auto bg-white shadow-2xl rounded-xl p-6 md:p-10">
+        <h1 class="text-3xl font-bold text-center mb-8 text-indigo-700 border-b pb-3">إدخال الدرجات الشهرية للطالب</h1>
+
+        <!-- رسائل الفلاش من Flask -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul class="mb-4">
+                {% for category, message in messages %}
+                    <li class="p-3 rounded-lg text-center font-semibold 
+                        {% if category == 'success' %}bg-green-100 text-green-800
+                        {% elif category == 'danger' %}bg-red-100 text-red-800
+                        {% else %}bg-blue-100 text-blue-800{% endif %}">
+                        {{ message }}
+                    </li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+
+        <!-- نموذج رفع ملف الإكسل -->
+        <div class="mb-10 p-6 border-2 border-dashed border-purple-300 bg-purple-50 rounded-lg">
+            <h2 class="text-xl font-bold text-purple-700 mb-4 text-center">رفع الدرجات عبر ملف Excel (XLSX)</h2>
+            <p class="text-sm text-gray-600 mb-4 text-center">
+                يجب أن يحتوي الملف على الأعمدة التالية بالترتيب: 
+                <span class="font-mono bg-gray-200 p-1 rounded">zk_user_id</span>، 
+                <span class="font-mono bg-gray-200 p-1 rounded">subject_name</span>، 
+                <span class="font-mono bg-gray-200 p-1 rounded">month_name</span>، 
+                <span class="font-mono bg-gray-200 p-1 rounded">year</span>، 
+                <span class="font-mono bg-gray-200 p-1 rounded">homework_grade</span>، 
+                <span class="font-mono bg-gray-200 p-1 rounded">oral_grade</span>، 
+                <span class="font-mono bg-gray-200 p-1 rounded">attendance_grade</span>، 
+                <span class="font-mono bg-gray-200 p-1 rounded">written_grade</span>.
+                <span class="font-mono bg-gray-200 p-1 rounded">supplies</span>.
+                <span class="font-mono bg-gray-200 p-1 rounded">app</span>.
+                سيتم تجاهل الصفوف التي لا يوجد لها طالب مسجل في النظام.
+            </p>
+            <form action="{{ url_for('admin_grade_import_excel') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                <div class="flex flex-col sm:flex-row items-center justify-center space-y-3 sm:space-y-0 sm:space-x-4 sm:space-x-reverse">
+                    <label for="excel_file" class="block text-sm font-medium text-gray-700 w-full sm:w-auto">اختر الملف:</label>
+                    <input type="file" id="excel_file" name="excel_file" required accept=".xlsx"
+                           class="w-full sm:w-2/3 p-2 border border-gray-300 rounded-md bg-white focus:ring-purple-500 focus:border-purple-500 text-sm">
+                    <button type="submit" 
+                            class="w-full sm:w-1/3 flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-md text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transform hover:scale-[1.01] transition duration-150 ease-in-out">
+                        <svg class="h-5 w-5 ml-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        رفع الدرجات (Excel)
+                    </button>
+                </div>
+            </form>
+        </div>
+        <!-- نهاية نموذج رفع ملف الإكسل -->
+
+        <!-- النموذج يستخدم مسار الحفظ admin_grade_save -->
+        <form id="grade-form" action="{{ url_for('admin_grade_save') }}" method="POST" class="space-y-6">
+
+            <!-- حقول التحديد الأساسية -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                
+                <!-- 1. حقل الطالب (قابل للبحث - Datalist) -->
+                <div>
+                    <label for="student_search" class="block text-sm font-medium text-gray-700 mb-1">اسم الطالب (للبحث)</label>
+                    
+                    <input type="text" id="student_search" list="students-list" required 
+                            class="datalist-input mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm bg-gray-50 border-2"
+                            placeholder="اكتب اسم الطالب أو ID للبحث...">
+                    
+                    <input type="hidden" id="zk_id" name="zk_id" required>
+
+                    <!-- قائمة Datalist لربط حقل الإدخال ببيانات الطلاب -->
+                    <datalist id="students-list">
+                        {% for student in students %}
+                            <option data-zkid="{{ student.zk_user_id }}" 
+                                    value="{{ student.name }} ({{ student.zk_user_id }})">
+                        {% endfor %}
+                    </datalist>
+                </div>
+
+                <!-- 2. حقل إدخال اسم المادة (مباشر) -->
+                <div>
+                    <label for="subject_name" class="block text-sm font-medium text-gray-700 mb-1">اسم المادة (إدخال يدوي)</label>
+                    <input type="text" id="subject_name" name="subject_name" required 
+                            placeholder="مثال: الرياضيات، العلوم"
+                            class="mt-1 block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm bg-gray-50 border-2">
+                </div>
+
+                <!-- 3. حقل إدخال الشهر (أصبح نصياً) -->
+                <div>
+                    <label for="month_name" class="block text-sm font-medium text-gray-700 mb-1">الشهر (كتابة الاسم)</label>
+                    <input type="text" id="month_name" name="month_name" required 
+                            placeholder="مثال: يناير، فبراير..."
+                            {# استخدام المتغيرات الممررة من Python #}
+                            value="{{ months[now.month - 1][1] if months and now.month is defined and now.month <= months|length else '' }}"
+                            class="mt-1 block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm bg-gray-50 border-2 text-center">
+                </div>
+
+                <!-- 4. حقل إدخال السنة (أصبح نصياً) -->
+                <div>
+                    <label for="year" class="block text-sm font-medium text-gray-700 mb-1">السنة الدراسية (4 أرقام)</label>
+                    <input type="text" id="year" name="year" required
+                            placeholder="مثال: 2023"
+                            value="{{ now.year if now is defined else '' }}"
+                            maxlength="4" 
+                            pattern="[0-9]{4}" 
+                            title="الرجاء إدخال أربعة أرقام للسنة"
+                            class="mt-1 block w-full pl-3 pr-3 py-2 text-base border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-gray-50 border-2 text-center">
+                </div>
+            </div>
+
+            <!-- حقول إدخال الدرجات -->
+            <h2 class="text-xl font-semibold text-gray-800 pt-4 border-t mt-6">إدخال الدرجات التفصيلية</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+
+                <!-- درجة الواجبات -->
+                <div>
+                    <label for="homework_grade" class="block text-sm font-medium text-gray-700 mb-1">درجة الواجبات</label>
+                    <input type="number" id="homework_grade" name="homework_grade" min="0" max="100" value="0" required
+                            class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500 text-center text-lg">
+                </div>
+                
+                <!-- درجة الشفهي -->
+                <div>
+                    <label for="oral_grade" class="block text-sm font-medium text-gray-700 mb-1">الدرجة الشفهية</label>
+                    <input type="number" id="oral_grade" name="oral_grade" min="0" max="100" value="0" required
+                            class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-lg shadow-sm focus:ring-yellow-500 focus:border-yellow-500 text-center text-lg">
+                </div>
+
+                <!-- درجة الحضور -->
+                <div>
+                    <label for="attendance_grade" class="block text-sm font-medium text-gray-700 mb-1">درجة الحضور</label>
+                    <input type="number" id="attendance_grade" name="attendance_grade" min="0" max="100" value="0" required
+                            class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-lg shadow-sm focus:ring-red-500 focus:border-red-500 text-center text-lg">
+                </div>
+
+                <!-- درجة التحريري -->
+                <div>
+                    <label for="written_grade" class="block text-sm font-medium text-gray-700 mb-1">الدرجة التحريرية</label>
+                    <input type="number" id="written_grade" name="written_grade" min="0" max="100" value="0" required
+                            class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 text-center text-lg">
+                </div>
+            </div>
+            <div>
+                    <label for="app" class="block text-sm font-medium text-gray-700 mb-1">درجة التطبيق </label>
+                    <input type="number" id="supplies" name="app" min="0" max="100" value="0" required
+                            class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500 text-center text-lg">
+                </div>
+                <div>
+                    <label for="supplies" class="block text-sm font-medium text-gray-700 mb-1">المحصلة </label>
+                    <input type="number" id="supplies" name="supplies" min="0" max="100" value="0" required
+                            class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500 text-center text-lg">
+                </div>
+            
+            <!-- عرض المجموع الكلي -->
+            <div class="pt-6 border-t mt-6">
+                <p class="text-lg font-semibold text-gray-800">
+                    المجموع الكلي: <span id="total-grade-display" class="text-2xl font-bold text-indigo-600 mr-2">0</span>
+                    <!-- حقل مخفي لحمل المجموع الكلي للحفظ في قاعدة البيانات -->
+                    <input type="hidden" id="grade_value" name="grade_value" value="0">
+                </p>
+            </div>
+
+            <!-- زر الحفظ -->
+            <div class="pt-6">
+                <button type="submit" id="save-button"
+                        class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-lg font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transform hover:scale-[1.01] transition duration-150 ease-in-out">
+                    حفظ وتحديث الدرجات
+                </button>
+            </div>
+        </form>
+
+      
+
+    <script>
+        // دالة حساب وعرض المجموع الكلي (JS)
+        function calculateTotalGrade() {
+            const homework = parseInt(document.getElementById('homework_grade').value) || 0;
+            const oral = parseInt(document.getElementById('oral_grade').value) || 0;
+            const attendance = parseInt(document.getElementById('attendance_grade').value) || 0;
+            const written = parseInt(document.getElementById('written_grade').value) || 0;
+            const app = parseInt(document.getElementById('app').value) || 0;
+            
+            const total = homework + oral + attendance + written + app;
+            document.getElementById('total-grade-display').textContent = total;
+            // تحديث الحقل المخفي ليرسله للباك إند
+            document.getElementById('grade_value').value = total;
+        }
+
+        // دالة لتحديث الحقل المخفي zk_id وتحديث رابط التصدير
+        function updateStudentAndExport() {
+            const studentSearchInput = document.getElementById('student_search');
+            const hiddenZkIdInput = document.getElementById('zk_id');
+            const selectedValue = studentSearchInput.value;
+            
+            let zkId = '';
+
+            // البحث عن الخيار الذي يطابق القيمة المدخلة في قائمة البيانات
+            const datalist = document.getElementById('students-list');
+            const options = datalist.options;
+
+            for (let i = 0; i < options.length; i++) {
+                if (options[i].value === selectedValue) {
+                    // إذا وجد تطابق، خذ الـ zk_user_id الحقيقي من خاصية data-zkid
+                    zkId = options[i].getAttribute('data-zkid');
+                    break;
+                }
+            }
+            
+            // تعيين القيمة الحقيقية للـ zk_id في الحقل المخفي
+            hiddenZkIdInput.value = zkId;
+
+            // تحديث رابط التصدير بعد تعيين الـ zk_id الجديد
+            updateExportLink();
+        }
+
+        // دالة تحديث رابط التصدير (JS)
+        function updateExportLink() {
+            // جلب قيمة zk_id من الحقل المخفي
+            const zk_id = document.getElementById('zk_id').value;
+            // جلب الشهر والسنة من حقول الإدخال النصية
+            const month = document.getElementById('month_name').value.trim();
+            const year = document.getElementById('year').value.trim();
+            
+            const exportLink = document.getElementById('export-link');
+            
+            // التحقق من وجود جميع الحقول المطلوبة (zk_id، الشهر، والسنة)
+            if (zk_id && month && year && zk_id !== '' && month !== '' && year !== '') {
+                // بناء الرابط باستخدام المسار المطلق الذي يطابق تعريف Flask
+                // ملاحظة: الرابط يتطلب اسم الشهر كنص هنا
+                exportLink.href = `/admin/grade/export/${zk_id}/${month}/${year}`;
+                exportLink.classList.remove('opacity-50', 'pointer-events-none');
+            } else {
+                // تعطيل الرابط إذا لم يتم اختيار جميع القيم
+                exportLink.href = "#";
+                exportLink.classList.add('opacity-50', 'pointer-events-none');
+            }
+        }
+        
+        // ربط مستمعي الأحداث في JavaScript
+        document.addEventListener('DOMContentLoaded', () => {
+            // تحديث المجموع عند تغيير أي حقل درجة
+            document.querySelectorAll('input[type="number"]').forEach(input => {
+                input.addEventListener('input', calculateTotalGrade);
+            });
+            
+            // الحدث الرئيسي لحقل البحث عن الطالب: عند اختيار قيمة من القائمة أو تغيير الحقل
+            document.getElementById('student_search').addEventListener('input', updateStudentAndExport);
+
+            // تحديث رابط التصدير عند تغيير خيارات الإدخال النصية
+            document.getElementById('month_name').addEventListener('input', updateExportLink);
+            document.getElementById('year').addEventListener('input', updateExportLink);
+            
+            calculateTotalGrade(); // حساب المجموع الأولي
+            updateExportLink(); // تحديث رابط التصدير الأولي
+        });
+    </script>
+</body>
+</html>

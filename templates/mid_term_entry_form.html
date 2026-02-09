@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>رصد درجات منتصف التيرم</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Tajawal', sans-serif; background-color: #f1f5f9; }
+        .loading-spinner { border-top-color: #6366f1; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="p-4">
+
+<div class="max-w-3xl mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden mt-10">
+    <div class="bg-indigo-600 p-6 text-white text-center">
+        <h2 class="text-2xl font-bold">رصد درجات منتصف التيرم</h2>
+        <p class="text-indigo-100 mt-2">يرجى التأكد من اختيار الطالب الصحيح من القائمة</p>
+    </div>
+
+    <form id="gradeForm" class="p-8 space-y-6">
+        <!-- البحث عن الطالب -->
+        <div class="relative">
+            <label class="block text-gray-700 font-bold mb-2">بحث عن الطالب (بالاسم أو الكود)</label>
+            <input type="text" id="studentSearch" 
+                   class="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-indigo-500 outline-none transition-all" 
+                   placeholder="اكتب اسم الطالب هنا..." autocomplete="off">
+            <div id="resultsList" class="hidden absolute z-50 w-full mt-1 bg-white border border-gray-200 shadow-xl rounded-xl max-h-64 overflow-y-auto"></div>
+            <input type="hidden" name="student_zk_id" id="target_zk_id">
+            <p id="selectionStatus" class="mt-2 text-indigo-600 font-bold"></p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-gray-700 font-bold mb-2">المادة</label>
+                <select id="subject_name" class="w-full p-4 border-2 border-gray-200 rounded-xl bg-white outline-none focus:border-indigo-500">
+                    <option value="">-- اختر المادة --</option>
+                    {% for subject in subjects %}
+                    <option value="{{ subject }}">{{ subject }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-gray-700 font-bold mb-2">السنة الدراسية</label>
+                <input type="text" id="academic_year" value="2025" class="w-full p-4 border-2 border-gray-200 rounded-xl bg-gray-50 outline-none">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-6">
+            <div>
+                <label class="block text-gray-700 font-bold mb-2">درجة أعمال السنة</label>
+                <input type="number" id="accumulated_grade" class="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-indigo-500 outline-none" placeholder="0">
+            </div>
+            <div>
+                <label class="block text-gray-700 font-bold mb-2">درجة امتحان التيرم</label>
+                <input type="number" id="end_term_grade" class="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-indigo-500 outline-none" placeholder="0">
+            </div>
+        </div>
+
+        <!-- رسالة الحالة -->
+        <div id="statusMsg" class="hidden p-4 rounded-xl text-center font-bold"></div>
+
+        <button type="submit" id="saveBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center">
+            <span id="btnText">حفظ البيانات</span>
+            <div id="spinner" class="hidden ml-3 w-6 h-6 border-4 border-white rounded-full loading-spinner"></div>
+        </button>
+    </form>
+</div>
+
+<!-- بيانات الطلاب من Flask -->
+<script id="students-json" type="application/json">{{ students|tojson|safe }}</script>
+
+<script>
+    const students = JSON.parse(document.getElementById('students-json').textContent || "[]");
+    const searchInput = document.getElementById('studentSearch');
+    const resultsList = document.getElementById('resultsList');
+    const targetIdInput = document.getElementById('target_zk_id');
+    const statusMsg = document.getElementById('statusMsg');
+    const gradeForm = document.getElementById('gradeForm');
+
+    // منطق البحث
+    searchInput.addEventListener('input', function() {
+        const val = this.value.toLowerCase();
+        resultsList.innerHTML = '';
+        if (val.length < 1) { resultsList.classList.add('hidden'); return; }
+
+        const filtered = students.filter(s => s[0].toLowerCase().includes(val) || String(s[1]).includes(val));
+        
+        filtered.forEach(s => {
+            const div = document.createElement('div');
+            div.className = 'p-3 hover:bg-indigo-50 cursor-pointer border-b text-right';
+            div.innerHTML = `<strong>${s[0]}</strong> <span class="text-xs text-gray-400">(${s[1]})</span>`;
+            div.onclick = () => {
+                searchInput.value = s[0];
+                targetIdInput.value = s[1];
+                document.getElementById('selectionStatus').innerText = "تم اختيار الطالب: " + s[0];
+                resultsList.classList.add('hidden');
+            };
+            resultsList.appendChild(div);
+        });
+        resultsList.classList.remove('hidden');
+    });
+
+    // إرسال البيانات
+    gradeForm.onsubmit = async (e) => {
+        e.preventDefault();
+        
+        if (!targetIdInput.value) {
+            showMsg("يرجى اختيار طالب أولاً", "bg-red-100 text-red-700");
+            return;
+        }
+
+        const data = {
+            student_zk_id: targetIdInput.value,
+            subject_name: document.getElementById('subject_name').value,
+            academic_year: document.getElementById('academic_year').value,
+            accumulated_grade: document.getElementById('accumulated_grade').value,
+            end_term_grade: document.getElementById('end_term_grade').value
+        };
+
+        // تغيير حالة الزر
+        document.getElementById('saveBtn').disabled = true;
+        document.getElementById('btnText').innerText = "جاري الحفظ...";
+        document.getElementById('spinner').classList.remove('hidden');
+
+        try {
+            // المسار الصحيح الموجود في ملف app.py لديك
+            const response = await fetch('/api/grades/mid_term/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showMsg(result.message, "bg-green-100 text-green-700");
+                // اختيارياً: تصفير الحقول بعد النجاح
+                // gradeForm.reset();
+            } else {
+                showMsg("فشل الحفظ: " + result.message, "bg-red-100 text-red-700");
+            }
+        } catch (err) {
+            showMsg("خطأ في الاتصال بالسيرفر", "bg-red-100 text-red-700");
+        } finally {
+            document.getElementById('saveBtn').disabled = false;
+            document.getElementById('btnText').innerText = "حفظ البيانات";
+            document.getElementById('spinner').classList.add('hidden');
+        }
+    };
+
+    function showMsg(text, classes) {
+        statusMsg.innerText = text;
+        statusMsg.className = `p-4 rounded-xl text-center font-bold mb-4 ${classes}`;
+        statusMsg.classList.remove('hidden');
+    }
+</script>
+</body>
+</html>

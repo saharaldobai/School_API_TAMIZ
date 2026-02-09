@@ -1,0 +1,22 @@
+/* إخفاء شريط التنقل العلوي لـ Flask-Admin */
+.navbar-static-top {
+    display: none !important;
+}
+
+/* إخفاء القائمة الجانبية في صفحات Flask-Admin */
+#menu {
+    display: none !important;
+}
+
+/* تعديل عرض المحتوى الرئيسي ليشغل كامل الشاشة */
+#content {
+    margin-left: 0 !important;
+    padding-left: 20px !important; 
+    padding-right: 20px !important; 
+}
+
+/* تعديل عرض الأعمدة لجعل المحتوى يمتد بالكامل على الشاشة */
+.col-md-3, .col-md-9, .col-md-12 {
+    width: 100% !important; 
+    padding: 0 15px; 
+}

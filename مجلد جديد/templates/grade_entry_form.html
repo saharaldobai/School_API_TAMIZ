@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>إدخال الدرجات الشهرية</title>
+    
+    {# روابط Bootstrap و Font Awesome #}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" integrity="sha384-dpuaG1suBy+kYbe0zY+rms5KGLhr67UikpAQypZPrxXn0H6Q4zC+T4UjAQ9axSc3" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    
+    <style>
+        /* -------------------------------------- */
+        /* التنسيقات العامة والخطوط */
+        /* -------------------------------------- */
+        body { 
+            background-color: #f8f9fa; /* خلفية بيضاء ناعمة */
+            color: #212529;
+        }
+        .top-nav {
+            background-color: #004d99; /* أزرق داكن احترافي */
+            color: white;
+            padding: 15px 40px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .top-nav h2 {
+            font-weight: 600;
+        }
+
+        /* -------------------------------------- */
+        /* تنسيق البطاقة الرئيسية (النموذج) */
+        /* -------------------------------------- */
+        .main-card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08); /* ظل ناعم وأعمق */
+        }
+        .card-header {
+            border-radius: 12px 12px 0 0 !important;
+            background-color: #007bff !important; /* أزرق موحد */
+            font-size: 1.2rem;
+            font-weight: 700;
+            padding: 1rem 1.5rem;
+        }
+        
+        /* -------------------------------------- */
+        /* تنسيق قسم الاختيار (الخطوة 1) */
+        /* -------------------------------------- */
+        .selector-block {
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            background-color: #ffffff; 
+            padding: 20px;
+        }
+        .form-select, .form-control {
+            border-radius: 6px;
+        }
+
+        /* -------------------------------------- */
+        /* تنسيق بطاقة الدرجة (الخطوة 2) */
+        /* -------------------------------------- */
+        .grade-card {
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            transition: all 0.2s;
+            background-color: #f8f9fa; /* خلفية فاتحة للبطاقة */
+            padding: 15px;
+            height: 100%;
+        }
+        .grade-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.1); /* ظل أزرق خفيف عند التمرير */
+            transform: translateY(-2px);
+        }
+        .grade-card .grade-label {
+            font-weight: 600;
+            color: #007bff; /* عنوان الدرجة باللون الأزرق */
+            margin-bottom: 5px;
+            display: block;
+        }
+        .grade-input {
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.3em;
+            color: #333;
+        }
+        
+        /* -------------------------------------- */
+        /* تنسيق المجموع الكلي */
+        /* -------------------------------------- */
+        #total_grade_container {
+            border: 2px solid #28a745; /* إطار أخضر صلب */
+            background-color: #e6ffec; /* لون خلفية أخضر فاتح جداً */
+            color: #155724;
+            font-size: 1.25rem;
+            font-weight: 700;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.2);
+        }
+        #total_grade {
+            font-size: 2em;
+            color: #004d99;
+        }
+        
+        /* تنسيق زر الحفظ */
+        .btn-primary.btn-lg {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);
+            font-size: 1.2rem;
+        }
+        .btn-primary.btn-lg:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 123, 255, 0.6);
+        }
+    </style>
+</head>
+<body>
+    
+    {# شريط التنقل العلوي - تم تصحيح الخطأ هنا #}
+    <div class="top-nav d-flex justify-content-between align-items-center">
+        <h2 class="mb-0"><i class="fas fa-calendar-alt me-2"></i> إدخال الدرجات الشهرية</h2>
+        <div class="nav-links d-flex align-items-center">
+            {# تم تصحيح اسم نقطة النهاية من 'import_monthly_grades' إلى 'export_monthly_grades_file' كما اقترح الخطأ #}
+            <a href="{{ url_for('export_monthly_grades_file') }}" class="btn btn-warning me-3 fw-bold shadow-sm">
+                <i class="fas fa-file-excel me-1"></i> تصدير نموذج إكسل
+            </a>
+            
+            <a href="{{ url_for('grades_entry_home') }}" class="text-white text-decoration-none fw-bold">
+                <i class="fas fa-arrow-left me-1"></i> العودة لصفحة الإدخال
+            </a>
+        </div>
+    </div>
+    
+    <div class="container my-5">
+        
+        {# رسالة تذكير احترافية #}
+        <div class="alert alert-info text-center fw-bold border-0 shadow-sm" role="alert">
+            <i class="fas fa-info-circle me-2"></i> **العملية:** يمكنك إما **اختيار طالب ومادة** للإدخال الفردي أدناه، أو استخدام زر **تصدير نموذج إكسل** للإدخال الجماعي.
+        </div>
+        
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card main-card">
+                    <div class="card-header text-white">
+                        <h4 class="mb-0">نموذج الإدخال الموحد</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        
+                        {# رسالة الحالة (نجاح/فشل) #}
+                        <div id="statusMessage" class="mt-2 mb-4 alert" style="display: none;"></div>
+                        
+                        <form id="gradeEntryForm">
+                            
+                            {# ------------------------------------------ #}
+                            {# 1. الخطوة الأولى: اختيار الوجهة (Step 1) #}
+                            {# ------------------------------------------ #}
+                            <h5 class="mb-3 text-secondary border-bottom pb-2">
+                                <span class="badge bg-primary me-2">1</span> تحديد الطالب والمادة
+                            </h5>
+                            <div class="row mb-4 selector-block">
+                                <div class="col-md-6 mb-3">
+                                    <label for="student_zk_id" class="form-label fw-bold text-dark">اختر الطالب</label>
+                                    <select class="form-select" id="student_zk_id" required>
+                                        <option value="">-- اختر طالباً (الاسم / ZK ID) --</option>
+                                        {% for name, zk_id in students %}
+                                            <option value="{{ zk_id }}">{{ name }} ({{ zk_id }})</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-3 mb-3">
+                                    <label for="academic_year" class="form-label fw-bold text-dark">العام الأكاديمي</label>
+                                    <input type="number" class="form-control" id="academic_year" value="{{ current_year }}" required min="2020" max="2050">
+                                </div>
+
+                                <div class="col-md-3 mb-3">
+                                    <label for="month_name" class="form-label fw-bold text-dark">الشهر</label>
+                                    <select class="form-select" id="month_name" required>
+                                        <option value="">-- اختر شهراً --</option>
+                                        <option value="سبتمبر">سبتمبر</option>
+                                        <option value="اكتوبر">أكتوبر</option>
+                                        <option value="نوفمبر">نوفمبر</option>
+                                        <option value="ديسمبر">ديسمبر</option>
+                                        <option value="يناير">يناير</option>
+                                        <option value="فبراير">فبراير</option>
+                                        <option value="مارس">مارس</option>
+                                        <option value="ابريل">أبريل</option>
+                                        <option value="مايو">مايو</option>
+                                        <option value="يونيو">يونيو</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="col-12 mt-3">
+                                    <label for="subject_name" class="form-label fw-bold text-success">المادة الدراسية</label>
+                                    <select class="form-select border-success" id="subject_name" required>
+                                        <option value="">-- اختر مادة (ستظهر نتائجها في الأسفل) --</option>
+                                        {% for subject in subjects %}
+                                            <option value="{{ subject[0] }}">{{ subject[0] }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            
+                            
+                            
+                            
+                            {# ------------------------------------------ #}
+                            {# 2. الخطوة الثانية: إدخال الدرجات (Step 2) #}
+                            {# ------------------------------------------ #}
+                            <h5 class="mb-3 mt-4 text-secondary border-bottom pb-2">
+                                <span class="badge bg-primary me-2">2</span> إدخال درجات المادة المحددة (المجموع 100%)
+                            </h5>
+                            <div class="row mb-4 g-4">
+                                
+                                {# الواجب (20%) #}
+                                <div class="col-md-3">
+                                    <div class="grade-card shadow-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="الحد الأقصى لدرجة الواجبات هو 20">
+                                        <label for="homework_grade" class="grade-label">الواجبات</label>
+                                        <small class="text-muted d-block mb-2">الحد الأقصى: 20 درجة</small>
+                                        <input type="number" class="form-control grade-input" id="homework_grade" value="0" min="0" max="20" required>
+                                    </div>
+                                </div>
+                                
+                                {# الشفوي (20%) #}
+                                <div class="col-md-3">
+                                    <div class="grade-card shadow-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="الحد الأقصى لدرجة التقييم الشفوي هو 20">
+                                        <label for="oral_grade" class="grade-label">الشفوي</label>
+                                        <small class="text-muted d-block mb-2">الحد الأقصى: 20 درجة</small>
+                                        <input type="number" class="form-control grade-input" id="oral_grade" value="0" min="0" max="20" required>
+                                    </div>
+                                </div>
+                                
+                                {# الحضور (10%) #}
+                                <div class="col-md-3">
+                                    <div class="grade-card shadow-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="الحد الأقصى لدرجة الحضور والسلوك هو 10">
+                                        <label for="attendance_grade" class="grade-label">الحضور</label>
+                                        <small class="text-muted d-block mb-2">الحد الأقصى: 10 درجات</small>
+                                        <input type="number" class="form-control grade-input" id="attendance_grade" value="0" min="0" max="10" required>
+                                    </div>
+                                </div>
+                                
+                                {# التحريري (50%) #}
+                                <div class="col-md-3">
+                                    <div class="grade-card shadow-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="الحد الأقصى لدرجة الاختبار التحريري هو 50">
+                                        <label for="written_grade" class="grade-label">التحريري</label>
+                                        <small class="text-muted d-block mb-2">الحد الأقصى: 50 درجة</small>
+                                        <input type="number" class="form-control grade-input" id="written_grade" value="0" min="0" max="50" required>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {# ------------------------------------------ #}
+                            {# 3. عرض المجموع الكلي وزر الحفظ #}
+                            {# ------------------------------------------ #}
+                            <hr class="mt-4 mb-4">
+                            <div class="row align-items-center">
+                                <div class="col-md-6 mb-3 mb-md-0">
+                                    <div id="total_grade_container" class="text-center">
+                                        المجموع الشهري الكلي: <strong id="total_grade">0</strong> / 100
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="d-grid">
+                                        <button type="submit" class="btn btn-primary btn-lg shadow-lg">
+                                            <i class="fas fa-upload me-2"></i> حفظ وتحديث الدرجات
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                        
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+    {# روابط JavaScript #}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            // تفعيل Tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            })
+
+            // ------------------------------------------
+            // 1. حساب المجموع التلقائي والتحقق من الحدود
+            // ------------------------------------------
+            function calculateTotal() {
+                let total = 0;
+                let hasError = false;
+                $('.grade-input').each(function() {
+                    const value = parseInt($(this).val()) || 0;
+                    const max = parseInt($(this).attr('max'));
+                    
+                    if (value > max || value < 0) {
+                        $(this).addClass('is-invalid');
+                        hasError = true;
+                    } else {
+                        $(this).removeClass('is-invalid');
+                        total += value;
+                    }
+                });
+
+                const totalContainer = $('#total_grade_container');
+                const submitButton = $('button[type="submit"]');
+
+                if (hasError) {
+                    $('#total_grade').text("خطأ");
+                    totalContainer.css('border-color', '#dc3545').css('background-color', '#f8d7da').css('color', '#721c24');
+                    submitButton.prop('disabled', true);
+                } else {
+                    $('#total_grade').text(total);
+                    totalContainer.css('border-color', '#28a745').css('background-color', '#e6ffec').css('color', '#155724');
+                    submitButton.prop('disabled', false);
+                }
+            }
+
+            $('.grade-input').on('input', calculateTotal);
+            calculateTotal();
+
+
+            // ------------------------------------------
+            // 2. معالجة إرسال النموذج (AJAX POST)
+            // ------------------------------------------
+            $('#gradeEntryForm').submit(function(e) {
+                e.preventDefault();
+                
+                // التأكد من عدم وجود أخطاء في الإدخال قبل الإرسال
+                if ($('button[type="submit"]').prop('disabled')) {
+                    $('#statusMessage').removeClass('alert-success').addClass('alert-danger').html('<i class="fas fa-exclamation-triangle me-2"></i> الرجاء تصحيح درجات الإدخال أولاً.').fadeIn();
+                    return;
+                }
+                
+                const student_zk_id = $('#student_zk_id').val();
+                const month_name = $('#month_name').val();
+                const year = parseInt($('#academic_year').val());
+                const subject_name = $('#subject_name').val();
+                const submitButton = $('button[type="submit"]');
+
+                // تحقق نهائي من حقول الاختيار
+                if (!student_zk_id || !month_name || !subject_name || isNaN(year)) {
+                    $('#statusMessage').removeClass('alert-success').addClass('alert-danger').html('<i class="fas fa-times-circle me-2"></i> **فشل الإدخال:** الرجاء اختيار الطالب والشهر والمادة بشكل صحيح.').fadeIn();
+                    return;
+                }
+                
+                // 1. بناء مسار API الصحيح للحفظ/التحديث
+                // **ملاحظة:** يفترض أن مسار API في Flask هو `/api/grades/save/<zk_id>/<month_name>/<year>`
+                const finalApiUrl = `/api/grades/save/${student_zk_id}/${month_name}/${year}`;
+                
+                // 2. بناء هيكل البيانات المرسل (Payload)
+                const payload = {
+                    'subject_name': subject_name,
+                    'homework_grade': parseInt($('#homework_grade').val()) || 0,
+                    'oral_grade': parseInt($('#oral_grade').val()) || 0,
+                    'attendance_grade': parseInt($('#attendance_grade').val()) || 0,
+                    'written_grade': parseInt($('#written_grade').val()) || 0
+                };
+                
+                // 3. إرسال طلب AJAX
+                $.ajax({
+                    url: finalApiUrl, // استخدام المسار النهائي المصحح
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(payload), // إرسال الهيكل الصحيح للبيانات
+                    beforeSend: function() {
+                        submitButton.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i> جاري الحفظ...');
+                        $('#statusMessage').hide(); 
+                    },
+                    success: function(response) {
+                        const total_grade_res = response.total_grade || $('#total_grade').text(); 
+                        $('#statusMessage')
+                            .removeClass('alert-danger')
+                            .addClass('alert-success')
+                            .html(`**<i class="fas fa-check-circle me-2"></i> نجاح الإدخال:** ${response.message || 'تم تحديث الدرجات بنجاح.'} (المجموع الجديد: **${total_grade_res}**)`)
+                            .fadeIn();
+                    },
+                    error: function(xhr, status, error) {
+                        // محاولة قراءة رسالة الخطأ من استجابة الخادم
+                        const errorMsg = xhr.responseJSON ? xhr.responseJSON.message : xhr.responseText ? xhr.responseText : `حدث خطأ غير معروف: ${error}`;
+                        $('#statusMessage')
+                            .removeClass('alert-success')
+                            .addClass('alert-danger')
+                            .html(`**<i class="fas fa-times-circle me-2"></i> فشل الإدخال:** ${errorMsg}`)
+                            .fadeIn();
+                    },
+                    complete: function() {
+                        submitButton.prop('disabled', false).html('<i class="fas fa-upload me-2"></i> حفظ وتحديث الدرجات');
+                    }
+                });
+            });
+
+            // ------------------------------------------
+            // 3. مسح الحقول عند تغيير الاختيار (لتحفيز إدخال جديد)
+            // ------------------------------------------
+            $('#subject_name, #student_zk_id, #month_name, #academic_year').change(function() {
+                // لا نحتاج لتحميل الدرجات السابقة هنا، فقط مسح الحقول
+                $('.grade-input').val(0);
+                calculateTotal(); // إعادة الحساب إلى الصفر
+                $('#statusMessage').hide(); 
+            });
+        });
+    </script>
+</body>
+</html>

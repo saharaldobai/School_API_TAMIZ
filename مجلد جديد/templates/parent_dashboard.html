@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>لوحة تحكم ولي الأمر</title>
+    <style>
+        /* تنسيقات مخصصة ونظيفة لواجهة ولي الأمر */
+        body { 
+            font-family: 'Tahoma', Arial, sans-serif; 
+            background-color: #e6f0ff; /* خلفية ناعمة */
+            color: #333; 
+            margin: 0; 
+            padding: 40px; 
+        }
+        .container { 
+            max-width: 900px; 
+            margin: 0 auto; 
+            background-color: white; 
+            padding: 30px; 
+            border-radius: 12px; 
+            box-shadow: 0 6px 20px rgba(0,0,0,0.1); 
+        }
+        h1 { 
+            color: #1e3a8a; 
+            border-bottom: 3px solid #1e3a8a; 
+            padding-bottom: 10px; 
+            margin-bottom: 30px; 
+            text-align: center; 
+        }
+        h2 { 
+            color: #3f51b5; 
+            margin-top: 25px; 
+        }
+        .student-card { 
+            border: 1px solid #ccc; 
+            padding: 20px; 
+            margin-bottom: 20px; 
+            border-radius: 8px; 
+            background-color: #f9f9f9; 
+        }
+        .student-card h3 { 
+            color: #5d6cb3; 
+            margin-top: 0; 
+        }
+        .report-links a { 
+            display: inline-block; 
+            padding: 10px 15px; 
+            margin: 5px; 
+            background-color: #3f51b5; 
+            color: white; 
+            text-decoration: none; 
+            border-radius: 5px; 
+            transition: background-color 0.3s; 
+            font-weight: bold;
+        }
+        .report-links a:hover { 
+            background-color: #1e3a8a; 
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>لوحة تحكم ولي الأمر</h1>
+        <h2>مرحباً بك يا: **{{ parent.username }}**</h2>
+        <p>الرجاء اختيار الطالب المراد عرض بياناته:</p>
+
+        {% if students %}
+            {% for student in students %}
+                <div class="student-card">
+                    <h3>🧑‍🎓 الطالب: {{ student.name }} </h3>
+                    <p>رقم الهوية (ZK ID): **{{ student.zk_user_id }}**</p>
+                    <p>الصف الحالي: **{{ student.current_class.name if student.current_class else 'غير محدد' }}**</p>
+                    
+                    <h4 style="color:#1e3a8a; margin-top: 20px;">التقارير المتاحة:</h4>
+                    <div class="report-links">
+                        <a href="{{ url_for('admin_view_monthly_grades', zk_id=student.zk_user_id, month='يناير', year=current_year) }}">درجات يناير (الشهري)</a>
+                        
+                        <a href="{{ url_for('admin_attendance_report_view', zk_id=student.zk_user_id, year=current_year, start_date='2025-01-01', end_date='2025-01-31') }}">تقرير الحضور والغياب (يناير)</a>
+                        
+                        <p style="margin-top: 15px; font-size: 0.9em; color: #666;">*يمكن تطوير هذه الروابط في الواجهة لتسمح لولي الأمر باختيار الشهر/التاريخ.</p>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: red; font-weight: bold;">❌ لم يتم ربط أي طالب بحسابك. يرجى مراجعة إدارة المدرسة.</p>
+        {% endif %}
+
+        <hr style="margin-top: 30px; border-color: #ddd;">
+        <p style="text-align: center; font-size: 0.9em;"><a href="/logout_route" style="color: #1e3a8a;">🚪 تسجيل الخروج</a></p>
+
+    </div>
+</body>
+</html>

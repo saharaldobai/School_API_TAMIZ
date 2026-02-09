@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>إدارة المواد الدراسية</title>
+</head>
+<body>
+    <h1>إدارة المواد الدراسية</h1>
+    <a href="{{ url_for('admin_dashboard') }}">&larr; العودة للوحة التحكم</a>
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
+
+    <h2>إضافة مادة جديدة</h2>
+    <form method="POST" action="{{ url_for('admin_subjects') }}">
+        <input type="text" name="name" placeholder="اسم المادة" required>
+        <button type="submit">إضافة</button>
+    </form>
+
+    <h2>قائمة المواد الحالية</h2>
+    <ul>
+        {% for subject in subjects %}
+            <li>{{ subject.name }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

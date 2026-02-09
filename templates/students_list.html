@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>إدارة الطلاب</title>
+</head>
+<body>
+    <h1>إدارة الطلاب</h1>
+    <a href="{{ url_for('admin_dashboard') }}">&larr; العودة للوحة التحكم</a>
+    <p><a href="{{ url_for('admin_add_student') }}">إضافة طالب جديد</a></p>
+
+    <h2>قائمة الطلاب</h2>
+    <table>
+        <tr><th>اسم الطالب</th><th>ZK ID</th><th>الصف الحالي</th><th>ولي الأمر ID</th></tr>
+        {% for student in students %}
+        <tr>
+            <td>{{ student.name }}</td>
+            <td>{{ student.zk_user_id }}</td>
+            <td>{{ student.current_class.name if student.current_class else 'غير محدد' }}</td>
+            <td>{{ student.parent_id or 'N/A' }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

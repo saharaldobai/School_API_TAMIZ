@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>البحث عن النتيجة النهائية السنوية</title>
+    <style>
+        /* -------------------------------------- */
+        /* التنسيقات العامة */
+        /* -------------------------------------- */
+        body { 
+            font-family: Tahoma, Arial, sans-serif; 
+            background-color: #f4f4f9; 
+            color: #333; 
+            margin: 0; 
+            padding: 40px; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container { 
+            max-width: 600px; 
+            width: 100%;
+            background-color: white; 
+            padding: 30px; 
+            border-radius: 12px; 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15); 
+            border-top: 5px solid #3f51b5;
+        }
+        h1 { 
+            color: #3f51b5; 
+            border-bottom: 2px solid #ff9800; /* لون برتقالي للتأكيد */
+            padding-bottom: 10px; 
+            margin-bottom: 30px; 
+            text-align: center;
+            font-weight: 600;
+        }
+        label { 
+            display: block; 
+            margin-bottom: 8px; 
+            font-weight: bold; 
+            color: #555;
+        }
+        input[type="text"], select { 
+            width: 100%; 
+            padding: 12px; 
+            margin-bottom: 20px; 
+            border: 1px solid #ddd; 
+            border-radius: 8px; 
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        input[type="text"]:focus, select:focus {
+            border-color: #3f51b5;
+            outline: none;
+            box-shadow: 0 0 5px rgba(63, 81, 181, 0.2);
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #ff9800;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: bold;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+        button:hover {
+            background-color: #fb8c00;
+            transform: translateY(-1px);
+        }
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="container">
+        <h1>البحث عن النتيجة النهائية السنوية</h1>
+
+        {% if search_results and search_results.error %}
+        <div class="alert alert-danger">{{ search_results.error }}</div>
+        {% endif %}
+
+        <form id="search_form" method="POST" action="{{ url_for('admin_search_final_grades') }}">
+            
+            {# 1. حقل اختيار الطالب #}
+            <div>
+                <label for="student_name">اسم الطالب:</label>
+                <input type="text" id="student_name" name="student_name" list="students_list" 
+                       placeholder="ابدأ بكتابة اسم الطالب..." required>
+                
+                {# قائمة الطلاب (datalist) لجلب الـ ZK ID #}
+                <datalist id="students_list">
+                    {% for name, zkid in students %}
+                    {# نحتاج إلى تمرير اسم الطالب كـ value والـ ZK ID كـ data-zkid #}
+                    <option value="{{ name }}" data-zkid="{{ zkid }}"></option>
+                    {% endfor %}
+                </datalist>
+                
+                {# حقل مخفي لحفظ الـ ZK ID الذي سيتم إرساله في الـ POST #}
+                <input type="hidden" id="zk_id" name="zk_id" required>
+            </div>
+
+            {# 2. حقل اختيار العام الأكاديمي #}
+            <div>
+                <label for="academic_year">العام الأكاديمي:</label>
+                <select id="academic_year" name="year" required>
+                    <option value="">اختر عام</option>
+                    {% for year in academic_years %}
+                    <option value="{{ year }}" {% if year == current_year %}selected{% endif %}>{{ year }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button type="submit">عرض النتيجة النهائية</button>
+        </form>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const nameInput = document.getElementById('student_name');
+            const zkIdInput = document.getElementById('zk_id');
+            const dataList = document.getElementById('students_list');
+            const searchForm = document.getElementById('search_form');
+
+            // وظيفة لربط اسم الطالب المُختار بالـ ZK ID المخفي
+            nameInput.addEventListener('input', function() {
+                const selectedName = nameInput.value;
+                // البحث عن العنصر <option> الذي يتطابق الـ value الخاص به مع الإدخال
+                const option = Array.from(dataList.options).find(opt => opt.value === selectedName);
+                
+                if (option) {
+                    // إذا تطابقت القيمة المدخلة، خذ الـ ZK ID المخزن في data-zkid
+                    zkIdInput.value = option.getAttribute('data-zkid');
+                    zkIdInput.removeAttribute('required'); 
+                } else {
+                    // إذا لم يتطابق الاسم، قم بتفريغ الحقل المخفي
+                    zkIdInput.value = '';
+                    zkIdInput.setAttribute('required', 'required');
+                }
+            });
+
+            // تأكد من أن الـ ZK ID تم تعيينه قبل الإرسال
+            searchForm.addEventListener('submit', function(e) {
+                if (!zkIdInput.value) {
+                    e.preventDefault();
+                    alert('الرجاء اختيار اسم طالب صحيح من القائمة.');
+                    nameInput.focus();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

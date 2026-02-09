@@ -1,0 +1,66 @@
+
+
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>{{ report_title }}</title>
+<!-- الأنماط الأساسية موجودة هنا، ويتم إكمالها بواسطة CSS الممرر لـ WeasyPrint في Python -->
+<style>
+body {
+font-family: 'Noto Sans Arabic', 'Droid Arabic Naskh', sans-serif;
+direction: rtl;
+text-align: right;
+line-height: 1.6;
+color: #333;
+}
+.header { text-align: center; margin-bottom: 30px; }
+.header h1 { color: #007bff; border-bottom: 3px solid #007bff; padding-bottom: 10px; display: inline-block; }
+.info { margin-bottom: 20px; border: 1px solid #eee; padding: 15px; border-radius: 8px; background-color: #f9f9f9; }
+.info p { margin: 5px 0; }
+table { width: 100%; border-collapse: collapse; margin-top: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+th, td { border: 1px solid #ddd; padding: 12px; text-align: right; }
+th { background-color: #007bff; color: white; font-weight: bold; }
+.footer { margin-top: 50px; text-align: center; font-size: 0.8em; color: #777; }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <h1>{{ report_title }}</h1>
+    <p>مُولّد بتاريخ: {{ date_generated }}</p>
+</div>
+
+<div class="info">
+    <h2>بيانات الطالب</h2>
+    <p><strong>اسم الطالب:</strong> {{ student_name }}</p>
+    <p><strong>اسم ولي الأمر:</strong> {{ parent_name }}</p>
+    <p><strong>الصف:</strong> {{ class_name }}</p>
+</div>
+
+<h2>جدول النتائج الشهرية (النتائج النصفية)</h2>
+<table>
+    <thead>
+        <tr>
+            <th>الشهر</th>
+            <th>الدرجة</th>
+            <th>ملاحظات المعلم</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for grade in grades %}
+        <tr>
+            <td>{{ grade.month_name }}</td>
+            <td>{{ grade.grade_value }}</td>
+            <td>{{ grade.notes | default("لا توجد ملاحظات", true) }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="footer">
+    <p>هذا التقرير تم توليده تلقائياً من نظام المتابعة. يرجى مراجعة إدارة المدرسة لأي استفسارات.</p>
+</div>
+
+
+</body>
+</html>

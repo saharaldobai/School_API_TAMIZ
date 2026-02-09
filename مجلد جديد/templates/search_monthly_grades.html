@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>البحث عن درجات طالب</title>
+    <style>
+        /* يمكنك نسخ وتعديل تنسيقات CSS من reports_page.html هنا أو استخدام ملف تنسيق مشترك */
+        body { font-family: Tahoma, Arial, sans-serif; background-color: #f4f4f9; color: #333; margin: 0; padding: 40px; }
+        .container { max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h1 { color: #3f51b5; border-bottom: 2px solid #3f51b5; padding-bottom: 10px; margin-bottom: 30px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; }
+        /* استخدام Select2 أو ما شابه لتحسين الـ select، لكن سنستخدم <datalist> الآن */
+        input[type="text"], input[type="number"], select { 
+            width: 100%; 
+            padding: 10px; 
+            margin-bottom: 20px; 
+            border: 1px solid #ccc; 
+            border-radius: 4px; 
+            box-sizing: border-box; 
+        }
+        button { 
+            background-color: #ff9800; 
+            color: white; 
+            padding: 12px 20px; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-size: 16px; 
+            transition: background-color 0.3s; 
+        }
+        button:hover { background-color: #fb8c00; }
+        .back-link { margin-top: 20px; display: inline-block; color: #3f51b5; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>البحث عن درجات طالب شهريًا</h1>
+        
+        <form method="POST" action="{{ url_for('admin_search_monthly_grades') }}" id="search_form"> 
+            
+            <label for="student_name_input">اسم الطالب:</label>
+            <input type="text" id="student_name_input" list="students_list" placeholder="ابدأ بكتابة اسم الطالب..." required>
+            
+            <datalist id="students_list">
+                {% for student in students %}
+                <option data-zkid="{{ student.zk_user_id }}" value="{{ student.name }}">
+                {% endfor %}
+            </datalist>
+
+            <input type="hidden" id="zk_id" name="zk_id" required>
+
+
+            <label for="month">اختر الشهر:</label>
+            <select id="month" name="month" required>
+                <option value="1">يناير</option>
+                <option value="2">فبراير</option>
+                <option value="3">مارس</option>
+                <option value="4">أبريل</option>
+                <option value="5">مايو</option>
+                <option value="6">يونيو</option>
+                <option value="7">يوليو</option>
+                <option value="8">أغسطس</option>
+                <option value="9">سبتمبر</option>
+                <option value="10">أكتوبر</option>
+                <option value="11">نوفمبر</option>
+                <option value="12">ديسمبر</option>
+            </select>
+<label for="year">العام الأكاديمي:</label>
+<select id="year" name="year" required>
+    {% for year in academic_years %}
+    {# ✅ الحل الأقوى: مقارنة القيم كأعداد صحيحة لضمان نجاح التحديد بغض النظر عن النوع #}
+    <option value="{{ year }}" {% if year|int == selected_year|int %}selected{% endif %}>{{ year }}</option>
+    {% endfor %}
+</select>
+
+            <button type="submit">بحث عن الدرجات</button>
+        </form>
+
+        {% if search_results and search_results.grades %}
+            <h2>نتائج البحث للطالب: {{ search_results.student_name }}</h2>
+            <div class="results-container">
+                <p><strong>العام الأكاديمي:</strong> {{ search_results.year }} | <strong>الشهر:</strong> {{ search_results.month_name }}</p>
+
+                <p class="success" style="color: green; text-align: center;">تم العثور على درجات. يرجى مراجعة تقرير الدرجات الشهرية.</p>
+
+            </div>
+        {% elif search_results %}
+             <p class="no-results" style="color: red; text-align: center;">لم يتم العثور على درجات شهرية للطالب المحدد في هذا الشهر والعام الأكاديمي.</p>
+        {% endif %}
+
+        <a class="back-link" href="{{ url_for('admin_reports') }}">العودة لصفحة التقارير</a>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const nameInput = document.getElementById('student_name_input');
+            const zkIdInput = document.getElementById('zk_id');
+            const dataList = document.getElementById('students_list');
+            const searchForm = document.getElementById('search_form');
+
+            // وظيفة لربط اسم الطالب المُختار بالـ ZK ID المخفي
+            nameInput.addEventListener('input', function() {
+                const selectedName = nameInput.value;
+                const option = Array.from(dataList.options).find(opt => opt.value === selectedName);
+                
+                if (option) {
+                    // إذا تطابقت القيمة المدخلة مع أحد خيارات datalist، خذ الـ ZK ID المخزن في data-zkid
+                    zkIdInput.value = option.getAttribute('data-zkid');
+                    // لإزالة علامة required مؤقتاً في حال وجود خطأ في البيانات
+                    zkIdInput.removeAttribute('required'); 
+                } else {
+                    // إذا لم يتطابق الاسم، قم بتفريغ الحقل المخفي
+                    zkIdInput.value = '';
+                    zkIdInput.setAttribute('required', 'required');
+                }
+            });
+
+            // تأكد من أن الـ ZK ID تم تعيينه قبل الإرسال
+            searchForm.addEventListener('submit', function(e) {
+                if (!zkIdInput.value) {
+                    e.preventDefault();
+                    alert('الرجاء اختيار اسم طالب صحيح من القائمة.');
+                    nameInput.focus();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
