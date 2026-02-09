@@ -382,7 +382,7 @@ def change_password():
              return jsonify({"message": "❌ المستخدم غير موجود."}), 404
         
         # 3. التحقق من كلمة المرور القديمة (باستخدام التشفير)
-        if not check_password_hash(user.password, old_password):
+        if user.password== old_password:
             return jsonify({"message": "❌ كلمة المرور القديمة غير صحيحة."}), 401
             
         # 4. التحقق من دور المستخدم (للسماح لأولياء الأمور فقط)
@@ -390,7 +390,7 @@ def change_password():
             return jsonify({"message": "❌ ليس لديك صلاحية تغيير كلمة المرور."}), 403
 
         # 5. تشفير وحفظ كلمة المرور الجديدة
-        user.password = generate_password_hash(new_password, method='pbkdf2:sha256')
+        user.password = new_password
         db.session.commit()
         
         # 6. النجاح
