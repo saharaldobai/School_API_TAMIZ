@@ -1,94 +1,0 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>طباعة التقارير</title>
-    <style>
-        body { 
-            font-family: Tahoma, Arial, sans-serif; 
-            background-color: #f4f4f9; 
-            color: #333; 
-            margin: 0; 
-            padding: 0; 
-            /* 🔑 إزالة display: flex من body */
-            min-height: 100vh;
-        }
-        .sidebar { 
-            width: 250px; 
-            background-color: #3f51b5; 
-            color: white; 
-            height: 100vh; 
-            position: fixed; 
-            top: 0;
-            right: 0; /* التثبيت على اليمين */
-            padding-top: 20px; 
-            box-shadow: -2px 0 5px rgba(0,0,0,0.1); 
-            z-index: 1000;
-        }
-        .sidebar h2 { text-align: center; margin-bottom: 30px; }
-        .sidebar a { display: block; padding: 15px; text-decoration: none; color: white; border-bottom: 1px solid #5d6cb3; transition: background-color 0.3s; }
-        .sidebar a:hover { background-color: #5d6cb3; }
-        
-        .content { 
-            /* 🔑 الهامش الضروري لترك مسافة للشريط الجانبي */
-            margin-right: 250px; 
-            padding: 40px; 
-            flex-grow: 1; 
-        }
-        
-        .report-card-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; margin-top: 30px; }
-        .report-card { background-color: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: transform 0.3s; }
-        .report-card:hover { transform: translateY(-5px); box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
-        .report-card h3 { color: #3f51b5; margin-top: 0; border-bottom: 2px solid #3f51b5; padding-bottom: 10px; }
-        .report-card p { color: #555; margin-bottom: 20px; }
-        .report-card a { display: block; background-color: #ff9800; color: white; padding: 10px; border-radius: 4px; text-align: center; text-decoration: none; font-weight: bold; transition: background-color 0.3s; }
-        .report-card a:hover { background-color: #fb8c00; }
-    </style>
-</head>
-<body>
-    
-    <div class="sidebar">
-        <h2>نظام شؤون الطلاب</h2>
-        <a href="{{ url_for('admin_dashboard') }}">الرئيسية</a>
-        <a href="{{ url_for('student.index_view') }}">إدارة الطلاب</a>
-        <a href="{{ url_for('admin_classes_list') }}">إدارة الصفوف والترحيل</a>
-        <a href="{{ url_for('subject.index_view') }}">إدارة المواد الدراسية</a>
-        <a href="{{ url_for('admin_grade_entry_form') }}">إدخال الدرجات الشهرية</a>
-        <a href="{{ url_for('admin_mid_term_entry_form') }}">إدخال الدرجات النصفية</a>
-        <a href="{{ url_for('admin_final_grade_entry_form') }}">إدخال الدرجات النهائية</a>
-        <a href="{{ url_for('admin_reports') }}" style="background-color: #5d6cb3;">طباعة التقارير 💡</a>
-    </div>
-
-    <div class="content">
-        <h1>صفحة طباعة التقارير</h1>
-        <p>اختر نوع التقرير الذي تريد إنشاءه أو طباعته:</p>
-
-        <div class="report-card-container">
-            <div class="report-card">
-                <h3>بحث درجات طالب شهريًا</h3>
-                <p>البحث عن درجات طالب محدد (برقم الهوية) لشهر معين.</p>
-                <a href="{{ url_for('admin_search_monthly_grades') }}">البحث عن الدرجات</a>
-            </div>
-
-            <div class="report-card">
-                <h3>بحث درجات الفصل (نصفية)</h3>
-                <p>البحث عن نتائج نهاية الفصل الأول والثاني (الدرجات النصفية).</p>
-                <a href="{{ url_for('admin_search_mid_term_grades') }}">البحث عن الدرجات</a>
-            </div>
-
-            <div class="report-card">
-                <h3>إدخال/عرض النتيجة النهائية السنوية</h3>
-                <p>إدخال أو عرض المجموع العام للطالب والنتيجة النهائية (ناجح/راسب).</p>
-                {# 🎯 تم التعديل هنا لتوجيه المستخدم لصفحة البحث عن النتيجة النهائية #}
-                <a href="{{ url_for('admin_search_final_grades') }}">الاطلاع على النتيجة</a>
-            </div>
-            
-            <div class="report-card">
-                <h3>تقرير الحضور والغياب</h3>
-                <p>يوفر إحصائيات الحضور والغياب للطلاب خلال فترة زمنية محددة.</p>
-                <a href="{{ url_for('admin_attendance_report_form') }}">إنشاء التقرير</a>
-            </div>
-        </div>
-    </div>
-</body>
-</html>
