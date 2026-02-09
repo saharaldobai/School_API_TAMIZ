@@ -579,7 +579,10 @@ def get_student_attendance_report(zk_id, start_date, end_date):
     except Exception as e:
         # لغرض التصحيح، يمكن أن تعرض رسالة الخطأ
         print(f"Error fetching attendance: {e}")
-        return jsonify({'message': '❌ حدث خطأ داخلي أثناء جلب البيانات.'}), 500
+        return jsonify({'message': '❌ حدث خطأ داخلي أثناء جلب البيانات.'}),
+        
+        
+500
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -2412,39 +2415,7 @@ def save_final_subject_grade():
     except Exception as e:
         db.session.rollback()
         return jsonify({"success": False, "message": f"خطأ في قاعدة البيانات: {str(e)}"}), 500
-#===============================================================================================
-
-
-@app.route('/login', methods=['GET', 'POST']) 
-def login():
-    if current_user.is_authenticated:
-        # إذا كان المستخدم مسجلاً بالفعل، يتم إعادة توجيهه إلى لوحة الإدارة
-        return redirect(url_for('admin_dashboard'))
-
-    # 1. محاولة إيجاد أي مستخدم في قاعدة البيانات
-    user = User.query.first()
-
-    if not user:
-        # 2. إذا لم يتم العثور على أي مستخدم، قم بإنشاء مستخدم افتراضي
-        try:
-            user = User(username='__auto_user__')
-            db.session.add(user)
-            db.session.commit()
-            print("--- تم إنشاء مستخدم افتراضي جديد '__auto_user__' لغرض الدخول التلقائي. ---")
-        except Exception as e:
-            # إذا فشلت العملية لأسباب تتعلق بالـ DB (مثل عدم وجود جدول)
-            flash(f'خطأ: فشل إعداد قاعدة البيانات للمستخدم التلقائي. {e}', 'error')
-            return redirect(url_for('admin_dashboard')) # يمكنك تغيير التوجيه حسب الحاجة
-
-    # 3. تسجيل الدخول التلقائي باستخدام Flask-Login
-    login_user(user)
-    flash(f'تم تسجيل الدخول التلقائي بنجاح كـ {user.username}.', 'success')
-    
-    # 4. إعادة التوجيه إلى الصفحة المطلوبة
-    next_page = request.args.get('next')
-    return redirect(next_page or url_for('admin_dashboard'))
-
-
+#===========================================================================================
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -2482,7 +2453,6 @@ def login():
     else:
         # الفشل
         return jsonify({"message": "❌ اسم المستخدم أو كلمة المرور غير صحيحة."}), 401
-# مسار تسجيل الخروج (يبقى كما هو)
 @app.route('/logout')
 @login_required
 def logout():
