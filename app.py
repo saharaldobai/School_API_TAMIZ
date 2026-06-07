@@ -2321,7 +2321,7 @@ def final_report(zk_id):
     report_data = {
         'student_name': student.name,
         'class_name': class_name,
-        'academic_year': current_year,
+        'academic_year': academic_year_to_query, 
         'overall_total': overall_total or 0.0, 
         'overall_ranking': overall_ranking_db, # 🔑 إرسال الترتيب المدخل يدوياً
         'general_result': general_result_db, 
