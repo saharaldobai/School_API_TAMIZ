@@ -2284,7 +2284,7 @@ def final_report(zk_id):
     # 1. الاستعلام عن الدرجات
     grades = FinalSubjectGrade.query.filter(
         FinalSubjectGrade.student_zk_id == zk_id,
-        FinalSubjectGrade.academic_year == current_year
+        FinalSubjectGrade.academic_year == academic_year_to_query 
     ).all()
 
     if not grades:
