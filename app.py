@@ -508,54 +508,7 @@ def month_sort_key(item):
     return (-year, -MONTH_ORDER.get(month_name, 0))
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-@app.route('/admin/grades/final/load', methods=['GET'])
-@login_required
-def load_final_grade():
-    try:
-        # 1. جلب البيانات القادمة من الجافا سكريبت عبر الـ URL
-        student_id = request.args.get('zk_id')
-        year = request.args.get('year')
-        subject_name = request.args.get('subject')
 
-        if not student_id or not year or not subject_name:
-            return jsonify({"status": "error", "message": "بيانات ناقصة"}), 400
-
-        # تحويل السنة إلى Integer لتطابق نوع الحقل في قاعدة البيانات لديكِ
-        try:
-            year = int(year)
-        except ValueError:
-            return jsonify({"status": "error", "message": "العام الأكاديمي غير صحيح"}), 400
-
-        # 2. البحث في جدول قاعدة البيانات الفعلي الخاص بكِ (FinalSubjectGrade)
-        grade_record = FinalSubjectGrade.query.filter_by(
-            student_zk_id=student_id,
-            academic_year=year,
-            subject_name=subject_name
-        ).first()
-
-        # 3. إذا عُثر على درجات سابقة، نرسلها بالأسماء التي تنتظرها الواجهة
-        if grade_record:
-            return jsonify({
-                "status": "success",
-                "has_grades": True,
-                "first_period_value": grade_record.first_acc_grade,     # مطابقة لجدولك
-                "first_period_result": grade_record.first_acc_result,   # مطابقة لجدولك
-                "second_period_value": grade_record.second_acc_grade,   # مطابقة لجدولك
-                "second_period_result": grade_record.second_acc_result, # مطابقة لجدولك
-                "total_score": grade_record.subject_total               # مطابقة لجدولك
-            }), 200
-            
-        else:
-            # إذا لم توجد درجات سابقة
-            return jsonify({
-                "status": "empty",
-                "has_grades": False,
-                "message": "لم يتم العثور على درجات سابقة. قم بإدخالها"
-            }), 200
-
-    except Exception as e:
-        print(f"Error in load_final_grade: {e}")
-        return jsonify({"status": "error", "message": str(e)}), 500
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     
 @app.route('/api/parent/attendance/<int:zk_id>/<string:start_date>/<string:end_date>', methods=['GET'])
@@ -3143,46 +3096,55 @@ def admin_classes_list():
     classes = db.session.query(Class).order_by(Class.id).all()
     return render_template('classes_list.html', classes=classes)
 
+# 🎯 تم استخدام اسم فريد للدالة هنا 'fetch_final_grade_data' لمنع تكرار المابينج في Flask
 @app.route('/admin/grades/final/load', methods=['GET'])
 @login_required
-def load_final_grade():
+def fetch_final_grade_data():
     try:
-        # جلب البيانات القادمة من الواجهة عبر الـ URL
+        # 1. جلب البيانات القادمة من الجافا سكريبت عبر الـ URL
         student_id = request.args.get('zk_id')
         year = request.args.get('year')
-        subject_name = request.args.get('subject') # تأكدي أن الواجهة ترسل اسم المادة أيضاً
+        subject_name = request.args.get('subject')
 
-        if not student_id or not year:
+        if not student_id or not year or not subject_name:
             return jsonify({"status": "error", "message": "بيانات ناقصة"}), 400
 
-        # البحث عن سجل الدرجة النهائي للطالب في قاعدة البيانات
-        # ملاحظة: استبدلي 'FinalGrade' باسم كلاس موديل الدرجات النهائية لديكِ إذا كان مختلفاً
-        grade_record = FinalGrade.query.filter_by(
+        # تحويل السنة إلى Integer لتطابق نوع الحقل في قاعدة البيانات لديكِ
+        try:
+            year = int(year)
+        except ValueError:
+            return jsonify({"status": "error", "message": "العام الأكاديمي غير صحيح"}), 400
+
+        # 2. البحث في جدول قاعدة البيانات الفعلي الخاص بكِ (FinalSubjectGrade)
+        grade_record = FinalSubjectGrade.query.filter_by(
             student_zk_id=student_id,
             academic_year=year,
             subject_name=subject_name
         ).first()
 
+        # 3. إذا عُثر على درجات سابقة، نرسلها بالأسماء التي تنتظرها الواجهة
         if grade_record:
-            # إذا عُثر على درجات سابقة، نرسلها للواجهة لتظهر في الخانات
             return jsonify({
                 "status": "success",
-                "first_period_value": grade_record.first_period_grade,  # تأكدي من أسماء الأعمدة في الجدول
-                "second_period_value": grade_record.second_period_grade,
-                "has_grades": True
+                "has_grades": True,
+                "first_period_value": grade_record.first_acc_grade,     # مطابقة لجدولك
+                "first_period_result": grade_record.first_acc_result,   # مطابقة لجدولك
+                "second_period_value": grade_record.second_acc_grade,   # مطابقة لجدولك
+                "second_period_result": grade_record.second_acc_result, # مطابقة لجدولك
+                "total_score": grade_record.subject_total               # مطابقة لجدولك
             }), 200
+            
         else:
             # إذا لم توجد درجات سابقة
             return jsonify({
                 "status": "empty",
-                "message": "لم يتم العثور على درجات سابقة. قم بإدخالها",
-                "has_grades": False
+                "has_grades": False,
+                "message": "لم يتم العثور على درجات سابقة. قم بإدخالها"
             }), 200
 
     except Exception as e:
-        print(f"Error in load_final_grade: {e}")
+        print(f"Error in fetch_final_grade_data: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
-
 
 
 @app.route('/admin/transfer_students', methods=['POST'])
