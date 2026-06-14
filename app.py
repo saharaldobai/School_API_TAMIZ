@@ -508,16 +508,54 @@ def month_sort_key(item):
     return (-year, -MONTH_ORDER.get(month_name, 0))
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-@app.route('/api/grades/<path:full_path>', methods=['GET'])
-def debug_grades_catch_all(full_path):
-    # إذا وصل الطلب إلى هنا، فلن ترى 404 بل سترى 200 أو 418
-    # سيعرض هذا المسار المسار الكامل الذي استقبله Flask بعد /api/grades/
-    
-    # ⚠️ هذه رسالة اختبار فقط ⚠️
-    return jsonify({
-        "message": "✅ تم العثور على المسار بنجاح!",
-        "received_path": full_path # يجب أن يكون 1002/MidTerm/2025
-    }), 200
+@app.route('/admin/grades/final/load', methods=['GET'])
+@login_required
+def load_final_grade():
+    try:
+        # 1. جلب البيانات القادمة من الجافا سكريبت عبر الـ URL
+        student_id = request.args.get('zk_id')
+        year = request.args.get('year')
+        subject_name = request.args.get('subject')
+
+        if not student_id or not year or not subject_name:
+            return jsonify({"status": "error", "message": "بيانات ناقصة"}), 400
+
+        # تحويل السنة إلى Integer لتطابق نوع الحقل في قاعدة البيانات لديكِ
+        try:
+            year = int(year)
+        except ValueError:
+            return jsonify({"status": "error", "message": "العام الأكاديمي غير صحيح"}), 400
+
+        # 2. البحث في جدول قاعدة البيانات الفعلي الخاص بكِ (FinalSubjectGrade)
+        grade_record = FinalSubjectGrade.query.filter_by(
+            student_zk_id=student_id,
+            academic_year=year,
+            subject_name=subject_name
+        ).first()
+
+        # 3. إذا عُثر على درجات سابقة، نرسلها بالأسماء التي تنتظرها الواجهة
+        if grade_record:
+            return jsonify({
+                "status": "success",
+                "has_grades": True,
+                "first_period_value": grade_record.first_acc_grade,     # مطابقة لجدولك
+                "first_period_result": grade_record.first_acc_result,   # مطابقة لجدولك
+                "second_period_value": grade_record.second_acc_grade,   # مطابقة لجدولك
+                "second_period_result": grade_record.second_acc_result, # مطابقة لجدولك
+                "total_score": grade_record.subject_total               # مطابقة لجدولك
+            }), 200
+            
+        else:
+            # إذا لم توجد درجات سابقة
+            return jsonify({
+                "status": "empty",
+                "has_grades": False,
+                "message": "لم يتم العثور على درجات سابقة. قم بإدخالها"
+            }), 200
+
+    except Exception as e:
+        print(f"Error in load_final_grade: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     
 @app.route('/api/parent/attendance/<int:zk_id>/<string:start_date>/<string:end_date>', methods=['GET'])
