@@ -2251,22 +2251,23 @@ class FinalStudentResult(db.Model):
 
 
 @app.route('/admin/grades/final/entry', methods=['GET', 'POST'])
+@login_required # تأكدي من وجودها إذا كانت مطلوبة لحماية المسار
 def admin_final_grade_entry_form():
     
-    # 👇 1. هذا الجزء الجديد الذي أضفناه لجلب الدرجات عند اختيار الطالب
+    # 👇 هذا هو الجزء البديل الذي سيجلب البيانات الحقيقية للواجهة
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         student_zk_id = request.args.get('zk_id')
         year = request.args.get('year')
-        subject_name = request.args.get('subject') # استقبال اسم المادة المرسل من الواجهة
+        subject_name = request.args.get('subject') # استقبال اسم المادة القادم من الـ JavaScript
         
-        # البحث عن درجات الطالب في قاعدة البيانات
+        # الاستعلام من جدول قاعدة البيانات المتاح في مشروعك
         grade_record = FinalSubjectGrade.query.filter_by(
             student_zk_id=student_zk_id,
             academic_year=year,
             subject_name=subject_name
         ).first()
         
-        # إذا عُثر على درجات سابقة، نرسل القيم الفعلية لتظهر في الخانات
+        # إذا كانت هناك درجات مسجلة مسبقاً، نرسلها ليتم ملء الخانات بها تلقائياً
         if grade_record:
             return jsonify({
                 'status': 'success',
@@ -2278,7 +2279,7 @@ def admin_final_grade_entry_form():
                 'total_score': grade_record.total_score
             })
         
-        # إذا لم توجد درجات سابقة، نرسل تنبيه للواجهة
+        # إذا لم تكن هناك درجات سابقة
         return jsonify({
             'status': 'empty',
             'has_grades': False,
@@ -2286,7 +2287,7 @@ def admin_final_grade_entry_form():
         })
 
     # -------------------------------------------------------------
-    # 2. هذا هو كودكِ الأصلي المخصص لعرض الصفحة لأول مرة (تركناه كما هو)
+    # بقية كودكِ الأصلي لعرض الصفحة لأول مرة (الموجود في السطور 1806 إلى 1816) كما هو بدون تغيير:
     students = db.session.query(Student.name, Student.zk_user_id).order_by(Student.name).all()
     subjects = Subject.query.order_by(Subject.name).all()
     current_year = get_current_year() 
