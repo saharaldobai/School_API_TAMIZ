@@ -3120,6 +3120,48 @@ def admin_classes_list():
     classes = db.session.query(Class).order_by(Class.id).all()
     return render_template('classes_list.html', classes=classes)
 
+@app.route('/admin/grades/final/load', methods=['GET'])
+@login_required
+def load_final_grade():
+    try:
+        # جلب البيانات القادمة من الواجهة عبر الـ URL
+        student_id = request.args.get('zk_id')
+        year = request.args.get('year')
+        subject_name = request.args.get('subject') # تأكدي أن الواجهة ترسل اسم المادة أيضاً
+
+        if not student_id or not year:
+            return jsonify({"status": "error", "message": "بيانات ناقصة"}), 400
+
+        # البحث عن سجل الدرجة النهائي للطالب في قاعدة البيانات
+        # ملاحظة: استبدلي 'FinalGrade' باسم كلاس موديل الدرجات النهائية لديكِ إذا كان مختلفاً
+        grade_record = FinalGrade.query.filter_by(
+            student_zk_id=student_id,
+            academic_year=year,
+            subject_name=subject_name
+        ).first()
+
+        if grade_record:
+            # إذا عُثر على درجات سابقة، نرسلها للواجهة لتظهر في الخانات
+            return jsonify({
+                "status": "success",
+                "first_period_value": grade_record.first_period_grade,  # تأكدي من أسماء الأعمدة في الجدول
+                "second_period_value": grade_record.second_period_grade,
+                "has_grades": True
+            }), 200
+        else:
+            # إذا لم توجد درجات سابقة
+            return jsonify({
+                "status": "empty",
+                "message": "لم يتم العثور على درجات سابقة. قم بإدخالها",
+                "has_grades": False
+            }), 200
+
+    except Exception as e:
+        print(f"Error in load_final_grade: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+
 @app.route('/admin/transfer_students', methods=['POST'])
 def admin_transfer_students():
     class_id = request.form.get('class_id')
