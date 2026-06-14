@@ -2287,74 +2287,7 @@ class FinalStudentResult(db.Model):
 
 
 
-@app.route('/admin/grades/final/entry', methods=['GET', 'POST'])
-@login_required
-def admin_final_grade_entry_form():
-    
-    # 🎯 هذا هو الجزء المسؤول عن استقبال طلب الـ JavaScript وجلب البيانات
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        student_zk_id = request.args.get('zk_id')
-        year = request.args.get('year')
-        subject_name = request.args.get('subject')
-        
-        if year:
-            try:
-                year = int(year)
-            except ValueError:
-                pass
 
-        # 🔍 طباعة الفحص المؤقتة لاكتشاف الخلل في الـ Render Logs
-        print("====== بدء فحص مشكلة جلب الدرجات ======", flush=True)
-        print(f"البيانات القادمة من الواجهة -> الطالب المطلوب: {student_zk_id} | السنة: {year} | المادة: {subject_name}", flush=True)
-        
-        try:
-            # جلب أول 3 سجلات في جدول الدرجات بالكامل لنرى كيف تبدو البيانات المخزنة فعلياً
-            sample_grades = FinalSubjectGrade.query.limit(3).all()
-            print("عينة من البيانات المخزنة فعلياً في جدول الـ DB:", flush=True)
-            for sg in sample_grades:
-                print(f"سجل في الـ DB -> الطالب المخزن: {sg.student_zk_id} | السنة: {sg.academic_year} | المادة: {sg.subject_name}", flush=True)
-        except Exception as db_err:
-            print(f"خطأ أثناء جلب عينة من قاعدة البيانات: {db_err}", flush=True)
-            
-        print("=======================================", flush=True)
-
-        # الاستعلام الأصلي للبحث عن المادة المحددة للطالب المحدّد
-        grade_record = FinalSubjectGrade.query.filter_by(
-            student_zk_id=student_zk_id,
-            academic_year=year,
-            subject_name=subject_name
-        ).first()
-        
-        if grade_record:
-            return jsonify({
-                'status': 'success',
-                'has_grades': True,
-                'first_period_value': grade_record.first_acc_grade,     
-                'first_period_result': grade_record.first_acc_result,   
-                'second_period_value': grade_record.second_acc_grade,   
-                'second_period_result': grade_record.second_acc_result, 
-                'total_score': grade_record.subject_total               
-            })
-        
-        return jsonify({
-            'status': 'empty',
-            'has_grades': False,
-            'message': 'لم يتم العثور على درجات سابقة. قم بإدخالها'
-        })
-
-    # -------------------------------------------------------------
-    # 🌐 الجزء المسؤول عن عرض الصفحة لأول مرة (كودكِ الأصلي بدون تغيير)
-    students = db.session.query(Student.name, Student.zk_user_id).order_by(Student.name).all()
-    subjects = Subject.query.order_by(Subject.name).all()
-    current_year = get_current_year() 
-    academic_years = list(range(current_year, current_year - 5, -1))
-    
-    return render_template(
-        'final_grade_entry_form.html',
-        students=students,
-        subjects=subjects,
-        academic_years=academic_years
-    )
 
 
     #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
