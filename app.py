@@ -2268,15 +2268,16 @@ def admin_final_grade_entry_form():
         ).first()
         
         # إذا كانت هناك درجات مسجلة مسبقاً، نرسلها ليتم ملء الخانات بها تلقائياً
+# إذا عُثر على درجات سابقة، نرسل القيم الحقيقية من الأعمدة المطابقة لقاعدة البيانات
         if grade_record:
             return jsonify({
                 'status': 'success',
                 'has_grades': True,
-                'first_period_value': grade_record.first_period_value, 
-                'first_period_result': grade_record.first_period_result,
-                'second_period_value': grade_record.second_period_value,
-                'second_period_result': grade_record.second_period_result,
-                'total_score': grade_record.total_score
+                'first_period_value': grade_record.first_acc_grade,     # 👈 تم التعديل للاسم الحقيقي
+                'first_period_result': grade_record.first_acc_result,   # 👈 تم التعديل للاسم الحقيقي
+                'second_period_value': grade_record.second_acc_grade,   # 👈 تم التعديل للاسم الحقيقي
+                'second_period_result': grade_record.second_acc_result, # 👈 تم التعديل للاسم الحقيقي
+                'total_score': grade_record.subject_total               # 👈 تم التعديل للاسم الحقيقي
             })
         
         # إذا لم تكن هناك درجات سابقة
