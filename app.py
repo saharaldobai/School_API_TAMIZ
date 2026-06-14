@@ -2250,20 +2250,53 @@ class FinalStudentResult(db.Model):
 
 
 
-    @app.route('/admin/grades/final/entry', methods=['GET'])
-    def admin_final_grade_entry_form():
-    # جلب البيانات الأساسية (الطلاب، المواد، الأعوام)
-     students = db.session.query(Student.name, Student.zk_user_id).order_by(Student.name).all()
-     subjects = Subject.query.order_by(Subject.name).all()
-     current_year = get_current_year() 
-     academic_years = list(range(current_year, current_year - 5, -1))
+@app.route('/admin/grades/final/entry', methods=['GET', 'POST'])
+def admin_final_grade_entry_form():
     
-     return render_template(
+    # 👇 1. هذا الجزء الجديد الذي أضفناه لجلب الدرجات عند اختيار الطالب
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        student_zk_id = request.args.get('zk_id')
+        year = request.args.get('year')
+        subject_name = request.args.get('subject') # استقبال اسم المادة المرسل من الواجهة
+        
+        # البحث عن درجات الطالب في قاعدة البيانات
+        grade_record = FinalSubjectGrade.query.filter_by(
+            student_zk_id=student_zk_id,
+            academic_year=year,
+            subject_name=subject_name
+        ).first()
+        
+        # إذا عُثر على درجات سابقة، نرسل القيم الفعلية لتظهر في الخانات
+        if grade_record:
+            return jsonify({
+                'status': 'success',
+                'has_grades': True,
+                'first_period_value': grade_record.first_period_value, 
+                'first_period_result': grade_record.first_period_result,
+                'second_period_value': grade_record.second_period_value,
+                'second_period_result': grade_record.second_period_result,
+                'total_score': grade_record.total_score
+            })
+        
+        # إذا لم توجد درجات سابقة، نرسل تنبيه للواجهة
+        return jsonify({
+            'status': 'empty',
+            'has_grades': False,
+            'message': 'لم يتم العثور على درجات سابقة. قم بإدخالها'
+        })
+
+    # -------------------------------------------------------------
+    # 2. هذا هو كودكِ الأصلي المخصص لعرض الصفحة لأول مرة (تركناه كما هو)
+    students = db.session.query(Student.name, Student.zk_user_id).order_by(Student.name).all()
+    subjects = Subject.query.order_by(Subject.name).all()
+    current_year = get_current_year() 
+    academic_years = list(range(current_year, current_year - 5, -1))
+    
+    return render_template(
         'final_grade_entry_form.html',
         students=students,
         subjects=subjects,
         academic_years=academic_years
-    
     )
 
 
