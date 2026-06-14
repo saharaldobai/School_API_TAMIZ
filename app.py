@@ -3096,12 +3096,10 @@ def admin_classes_list():
     classes = db.session.query(Class).order_by(Class.id).all()
     return render_template('classes_list.html', classes=classes)
 
-# 🎯 تم استخدام اسم فريد للدالة هنا 'fetch_final_grade_data' لمنع تكرار المابينج في Flask
 @app.route('/admin/grades/final/load', methods=['GET'])
 @login_required
 def fetch_final_grade_data():
     try:
-        # 1. جلب البيانات القادمة من الجافا سكريبت عبر الـ URL
         student_id = request.args.get('zk_id')
         year = request.args.get('year')
         subject_name = request.args.get('subject')
@@ -3109,33 +3107,29 @@ def fetch_final_grade_data():
         if not student_id or not year or not subject_name:
             return jsonify({"status": "error", "message": "بيانات ناقصة"}), 400
 
-        # تحويل السنة إلى Integer لتطابق نوع الحقل في قاعدة البيانات لديكِ
         try:
             year = int(year)
         except ValueError:
             return jsonify({"status": "error", "message": "العام الأكاديمي غير صحيح"}), 400
 
-        # 2. البحث في جدول قاعدة البيانات الفعلي الخاص بكِ (FinalSubjectGrade)
+        # الاستعلام الفعلي من جدول قاعدة البيانات المطابق لأعمدتكِ الذكية
         grade_record = FinalSubjectGrade.query.filter_by(
             student_zk_id=student_id,
             academic_year=year,
             subject_name=subject_name
         ).first()
 
-        # 3. إذا عُثر على درجات سابقة، نرسلها بالأسماء التي تنتظرها الواجهة
         if grade_record:
             return jsonify({
                 "status": "success",
                 "has_grades": True,
-                "first_period_value": grade_record.first_acc_grade,     # مطابقة لجدولك
-                "first_period_result": grade_record.first_acc_result,   # مطابقة لجدولك
-                "second_period_value": grade_record.second_acc_grade,   # مطابقة لجدولك
-                "second_period_result": grade_record.second_acc_result, # مطابقة لجدولك
-                "total_score": grade_record.subject_total               # مطابقة لجدولك
+                "first_period_value": grade_record.first_acc_grade,     
+                "first_period_result": grade_record.first_acc_result,   
+                "second_period_value": grade_record.second_acc_grade,   
+                "second_period_result": grade_record.second_acc_result, 
+                "total_score": grade_record.subject_total               
             }), 200
-            
         else:
-            # إذا لم توجد درجات سابقة
             return jsonify({
                 "status": "empty",
                 "has_grades": False,
@@ -3145,8 +3139,6 @@ def fetch_final_grade_data():
     except Exception as e:
         print(f"Error in fetch_final_grade_data: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
-
-
 @app.route('/admin/transfer_students', methods=['POST'])
 def admin_transfer_students():
     class_id = request.form.get('class_id')
