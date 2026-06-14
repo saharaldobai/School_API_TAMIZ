@@ -171,59 +171,63 @@
             // ------------------------------------------
             // 3. وظيفة جلب الدرجات السابقة (للتعديل)
             // ------------------------------------------
-            function loadExistingGrades() {
-                const zk_id = $('#student_zk_id').val();
-                const year = $('#academic_year').val();
-                const subject = $('#subject_name').val();
-                
-                if (!zk_id || !year || !subject) {
-                    $('#first_acc_grade').val(0);
-                    $('#second_acc_grade').val(0);
-                    $('#first_acc_result').val(0); 
-                    $('#second_acc_result').val(0);
-                    calculateTotal();
-                    return;
-                }
-                
-                // جلب الدرجات الحالية من قاعدة البيانات عبر مسار GET (تحتاج لإضافته في app.py لاحقاً)
-                $.ajax({
-                    url: `/api/grades/final/load?zk_id=${zk_id}&year=${year}&subject=${subject}`,
-                    method: 'GET',
-                    success: function(response) {
-                        if (response.grades) {
-                            $('#first_acc_grade').val(response.grades.first_acc_grade || 0);
-                            $('#first_acc_result').val(response.grades.first_acc_result || 0); 
-                            $('#second_acc_grade').val(response.grades.second_acc_grade || 0);
-                            $('#second_acc_result').val(response.grades.second_acc_result || 0);
-                            $('#statusMessage')
-                                .removeClass('alert-danger')
-                                .addClass('alert-info')
-                                .html(`**<i class="fas fa-info-circle me-2"></i> تم تحميل درجات المادة بنجاح. أصبحت جاهزة للتعديل.**`)
-                                .fadeIn();
-                        } else {
-                             // في حالة عدم وجود درجات سابقة، يتم تصفير الحقول وتحديث المجموع
-                            $('#first_acc_grade').val(0);
-                            $('#second_acc_grade').val(0);
-                            $('#first_acc_result').val(0); 
-                            $('#second_acc_result').val(0);
-                            $('#statusMessage')
-                                .removeClass('alert-danger')
-                                .addClass('alert-info')
-                                .html(`**<i class="fas fa-info-circle me-2"></i> لم يتم العثور على درجات سابقة. قم بإدخالها.**`)
-                                .fadeIn();
-                        }
-                        calculateTotal(); // تحديث المجموع بعد التحميل أو التصفير
-                    },
-                    error: function(xhr, status, error) {
-                        $('#statusMessage')
-                            .removeClass('alert-info')
-                            .addClass('alert-danger')
-                            .html(`**<i class="fas fa-times-circle me-2"></i> فشل تحميل البيانات: ${xhr.responseJSON ? xhr.responseJSON.message : xhr.responseText}.**`)
-                            .fadeIn();
-                        calculateTotal();
-                    }
-                });
+           function loadExistingGrades() {
+            const studentId = $('#student_zk_id').val();
+            const academicYear = $('#academic_year').val();
+            const subjectName = $('#subject_name').val(); // 👈 1. جلب اسم المادة المحددة
+
+            // إذا لم يتم اختيار الطالب أو العام أو المادة، نقوم بتفريغ الخانات والتوقف
+            if (!studentId || !academicYear || !subjectName) {
+                clearGradeInputs();
+                return;
             }
+
+            $('#statusMessage').hide();
+
+            $.ajax({
+                // 👈 2. تعديل الرابط لإرسال المادة أيضاً باسم subject للـ Backend
+                url: `/admin/grades/final/entry?zk_id=${studentId}&year=${academicYear}&subject=${encodeURIComponent(subjectName)}`,
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                success: function(response) {
+                    if (response.status === 'success' && response.has_grades) {
+                        // ملء الخانات بالقيم القادمة من السيرفر بناءً على الأسماء التي عدلناها في بايثون
+                        $('#first_acc_grade').val(response.first_period_value);
+                        $('#first_acc_result').val(response.first_period_result);
+                        $('#second_acc_grade').val(response.second_period_value);
+                        $('#second_acc_result').val(response.second_period_result);
+                        
+                        // تحديث المجموع الكلي المعروض في واجهتكِ
+                        if (response.total_score !== undefined) {
+                            $('#subjectTotalDisplay').text(parseFloat(response.total_score).toFixed(2));
+                        }
+
+                        $('#statusMessage')
+                            .removeClass('alert-danger alert-info')
+                            .addClass('alert-success')
+                            .html('<i class="fas fa-info-circle me-2"></i> تم تحميل الدرجات السابقة بنجاح. يمكنك التعديل عليها الآن.')
+                            .fadeIn();
+                    } else {
+                        clearGradeInputs();
+                        $('#statusMessage')
+                            .removeClass('alert-danger alert-success')
+                            .addClass('alert-info')
+                            .html(`<i class="fas fa-info-circle me-2"></i> ${response.message || 'لم يتم العثور على درجات سابقة. قم بإدخالها'}`)
+                            .fadeIn();
+                    }
+                },
+                error: function(xhr) {
+                    clearGradeInputs();
+                    $('#statusMessage')
+                        .removeClass('alert-success alert-info')
+                        .addClass('alert-danger')
+                        .html('<i class="fas fa-exclamation-circle me-2"></i> حدث خطأ أثناء محاولة جلب الدرجات السابقة.')
+                        .fadeIn();
+                }
+            });
+        }
             
             // جلب الدرجات عند تغيير العام أو المادة
             $('#academic_year, #subject_name').on('change', loadExistingGrades);
