@@ -2258,6 +2258,8 @@ def admin_final_grade_entry_form():
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         student_zk_id = request.args.get('zk_id')
         year = request.args.get('year')
+        if year:
+        year = int(year)
         subject_name = request.args.get('subject') # استقبال اسم المادة القادم من الـ JavaScript
         
         # الاستعلام من جدول قاعدة البيانات المتاح في مشروعك
