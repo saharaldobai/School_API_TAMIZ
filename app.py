@@ -2249,40 +2249,40 @@ class FinalStudentResult(db.Model):
 
 
 
-
 @app.route('/admin/grades/final/entry', methods=['GET', 'POST'])
-@login_required # تأكدي من وجودها إذا كانت مطلوبة لحماية المسار
+@login_required 
 def admin_final_grade_entry_form():
     
-    # 👇 هذا هو الجزء البديل الذي سيجلب البيانات الحقيقية للواجهة
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         student_zk_id = request.args.get('zk_id')
         year = request.args.get('year')
-        if year:
-        year = int(year)
-        subject_name = request.args.get('subject') # استقبال اسم المادة القادم من الـ JavaScript
+        subject_name = request.args.get('subject') 
         
-        # الاستعلام من جدول قاعدة البيانات المتاح في مشروعك
+        # 🔑 الإصلاح البرمجي هنا: تحويل السنة إلى رقم صحيح ليطابق نوع العمود INTEGER في قاعدة البيانات
+        if year:
+            try:
+                year = int(year)
+            except ValueError:
+                pass # في حال كانت القيمة غير صالحة للتحويل
+        
+        # الآن سيتم الاستعلام بشكل صحيح وسليم 100% بدون تعارض أنواع البيانات
         grade_record = FinalSubjectGrade.query.filter_by(
             student_zk_id=student_zk_id,
             academic_year=year,
             subject_name=subject_name
         ).first()
         
-        # إذا كانت هناك درجات مسجلة مسبقاً، نرسلها ليتم ملء الخانات بها تلقائياً
-# إذا عُثر على درجات سابقة، نرسل القيم الحقيقية من الأعمدة المطابقة لقاعدة البيانات
         if grade_record:
             return jsonify({
                 'status': 'success',
                 'has_grades': True,
-                'first_period_value': grade_record.first_acc_grade,     # 👈 تم التعديل للاسم الحقيقي
-                'first_period_result': grade_record.first_acc_result,   # 👈 تم التعديل للاسم الحقيقي
-                'second_period_value': grade_record.second_acc_grade,   # 👈 تم التعديل للاسم الحقيقي
-                'second_period_result': grade_record.second_acc_result, # 👈 تم التعديل للاسم الحقيقي
-                'total_score': grade_record.subject_total               # 👈 تم التعديل للاسم الحقيقي
+                'first_period_value': grade_record.first_acc_grade,     
+                'first_period_result': grade_record.first_acc_result,   
+                'second_period_value': grade_record.second_acc_grade,   
+                'second_period_result': grade_record.second_acc_result, 
+                'total_score': grade_record.subject_total               
             })
         
-        # إذا لم تكن هناك درجات سابقة
         return jsonify({
             'status': 'empty',
             'has_grades': False,
@@ -2290,7 +2290,6 @@ def admin_final_grade_entry_form():
         })
 
     # -------------------------------------------------------------
-    # بقية كودكِ الأصلي لعرض الصفحة لأول مرة (الموجود في السطور 1806 إلى 1816) كما هو بدون تغيير:
     students = db.session.query(Student.name, Student.zk_user_id).order_by(Student.name).all()
     subjects = Subject.query.order_by(Subject.name).all()
     current_year = get_current_year() 
@@ -2302,7 +2301,6 @@ def admin_final_grade_entry_form():
         subjects=subjects,
         academic_years=academic_years
     )
-
 
     #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 from datetime import datetime
